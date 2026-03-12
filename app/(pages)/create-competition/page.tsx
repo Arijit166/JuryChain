@@ -1,0 +1,297 @@
+'use client';
+
+import { useState } from 'react';
+import { Navbar } from '@/components/layout/navbar';
+import { ArrowRight, Check, AlertCircle, Plus, Trash2 } from 'lucide-react';
+
+export default function CreateCompetitionPage() {
+  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    prizePool: '',
+    winners: '3',
+    submissionDeadline: '',
+    votingDeadline: '',
+    isPublic: true,
+  });
+
+  const [judges, setJudges] = useState<Array<{ type: 'wallet' | 'email'; value: string }>>([]);
+  const [judgeInput, setJudgeInput] = useState('');
+  const [judgeType, setJudgeType] = useState<'wallet' | 'email'>('wallet');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const addJudge = () => {
+    if (judgeInput.trim()) {
+      setJudges([...judges, { type: judgeType, value: judgeInput }]);
+      setJudgeInput('');
+    }
+  };
+
+  const removeJudge = (index: number) => {
+    setJudges(judges.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+  };
+
+  if (submitted) {
+    return (
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4">
+          <div className="glass-card p-12 border-lime-400/20 text-center max-w-md w-full">
+            <div className="mb-6 flex justify-center">
+              <div className="w-16 h-16 rounded-full bg-lime-400/20 border border-lime-400/50 flex items-center justify-center animate-glow-pulse">
+                <Check className="w-8 h-8 text-lime-300" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-2">Competition Created!</h2>
+            <p className="text-gray-400 mb-8">Your competition has been published and is now live on the network.</p>
+            <div className="space-y-3 text-sm text-gray-400 mb-8">
+              <div className="flex items-center justify-center gap-2">
+                <span className="badge-primary">Transaction ID</span>
+                <span className="font-mono text-xs text-cyan-300">0x742d...8f9a</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="badge-secondary">Prize Escrowed</span>
+                <span className="font-mono text-xs text-purple-300">{formData.prizePool} USD</span>
+              </div>
+            </div>
+            <a href="/" className="btn-neon-cyan w-full block py-3">
+              Back to Home
+            </a>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-background">
+      <Navbar />
+      
+      <div className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Page Header */}
+          <div className="mb-12">
+            <h1 className="text-5xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                Create a Competition
+              </span>
+            </h1>
+            <p className="text-gray-400 text-lg">
+              Set up a new trustless competition with cryptographic judging and smart contract-based prize distribution.
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <form onSubmit={handleSubmit} className="glass-card p-8 border-cyan-500/20 space-y-8">
+            {/* Competition Details */}
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/50 flex items-center justify-center text-cyan-300 text-sm font-bold">1</span>
+                Competition Details
+              </h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Competition Title *</label>
+                  <input
+                    type="text"
+                    name="title"
+                    placeholder="e.g., Web3 Hackathon 2024"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Description *</label>
+                  <textarea
+                    name="description"
+                    placeholder="Describe your competition, rules, evaluation criteria..."
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    required
+                    rows={4}
+                    className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Prize & Timeline */}
+            <div className="border-t border-cyan-500/10 pt-8">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/50 flex items-center justify-center text-purple-300 text-sm font-bold">2</span>
+                Prize & Timeline
+              </h2>
+
+              <div className="grid sm:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Prize Pool (USD) *</label>
+                  <input
+                    type="number"
+                    name="prizePool"
+                    placeholder="500000"
+                    value={formData.prizePool}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Number of Winners *</label>
+                  <select
+                    name="winners"
+                    value={formData.winners}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  >
+                    <option value="1">1 Winner</option>
+                    <option value="3">3 Winners</option>
+                    <option value="5">5 Winners</option>
+                    <option value="10">10 Winners</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Submission Deadline *</label>
+                  <input
+                    type="date"
+                    name="submissionDeadline"
+                    value={formData.submissionDeadline}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Voting Deadline *</label>
+                  <input
+                    type="date"
+                    name="votingDeadline"
+                    value={formData.votingDeadline}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Judges */}
+            <div className="border-t border-cyan-500/10 pt-8">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-lime-400/20 border border-lime-400/50 flex items-center justify-center text-lime-300 text-sm font-bold">3</span>
+                Judges & Settings
+              </h2>
+
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-white mb-3">Add Judge *</label>
+                <div className="flex gap-3 mb-4">
+                  <select
+                    value={judgeType}
+                    onChange={(e) => setJudgeType(e.target.value as 'wallet' | 'email')}
+                    className="px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="wallet">Wallet Address</option>
+                    <option value="email">Email Address</option>
+                  </select>
+                  <input
+                    type={judgeType === 'wallet' ? 'text' : 'email'}
+                    value={judgeInput}
+                    onChange={(e) => setJudgeInput(e.target.value)}
+                    placeholder={judgeType === 'wallet' ? '0x...' : 'judge@example.com'}
+                    className="flex-1 px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addJudge())}
+                  />
+                  <button
+                    type="button"
+                    onClick={addJudge}
+                    className="p-3 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 transition-colors duration-300"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {judges.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    <label className="block text-sm font-semibold text-white">Judges ({judges.length})</label>
+                    <div className="space-y-2">
+                      {judges.map((judge, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-black/30 rounded border border-purple-500/20">
+                          <div>
+                            <div className="text-xs text-gray-400">{judge.type === 'wallet' ? 'Wallet' : 'Email'}</div>
+                            <div className="text-white font-mono text-sm">{judge.value}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeJudge(idx)}
+                            className="p-2 hover:bg-red-500/20 rounded transition-colors duration-300"
+                          >
+                            <Trash2 className="w-5 h-5 text-red-400" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-4 p-4 bg-black/30 rounded-lg border border-cyan-500/20">
+                <input
+                  type="checkbox"
+                  id="public"
+                  checked={formData.isPublic}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                  className="w-4 h-4 rounded cursor-pointer"
+                />
+                <label htmlFor="public" className="flex-1 cursor-pointer">
+                  <div className="text-sm font-semibold text-white">Public Competition</div>
+                  <div className="text-xs text-gray-400">Allow public submissions and participation</div>
+                </label>
+              </div>
+            </div>
+
+            {/* Info Note */}
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 flex gap-3">
+              <AlertCircle className="w-5 h-5 text-cyan-300 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-gray-300">
+                  <strong>Transparent & Trustless:</strong> Prize funds are escrowed on-chain. Submissions are stored with IPFS hashes. Winners are determined by judges using zero-knowledge proofs, ensuring anonymity while preventing fraud.
+                </p>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              disabled={judges.length < 3}
+              className="w-full btn-neon-cyan flex items-center justify-center gap-2 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Create & Publish Competition
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            {judges.length < 3 && (
+              <p className="text-center text-sm text-gray-400">Add at least 3 judges to continue</p>
+            )}
+          </form>
+        </div>
+      </div>
+    </main>
+  );
+}
