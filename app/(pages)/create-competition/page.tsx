@@ -20,7 +20,7 @@ export default function CreateCompetitionPage() {
   const [judgeInput, setJudgeInput] = useState('');
   const [judgeType, setJudgeType] = useState<'wallet' | 'email'>('wallet');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
