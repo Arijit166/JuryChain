@@ -15,4 +15,3 @@ next-env.d.ts
 next.config.mjs
 components.json
 postcss.config.mjs
-tsconfig.json
