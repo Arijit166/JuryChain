@@ -126,8 +126,12 @@ export default function ExplorePage() {
 
       {/* Hero Section */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-2">Explore Competitions</h1>
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl font-bold mb-2">
+            <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+              Explore Competitions
+            </span>
+          </h1>
           <p className="text-lg text-gray-400">Find competitions and showcase your innovation</p>
         </div>
       </section>

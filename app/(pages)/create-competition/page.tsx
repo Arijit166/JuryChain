@@ -80,7 +80,7 @@ export default function CreateCompetitionPage() {
       <div className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Page Header */}
-          <div className="mb-12">
+          <div className="mb-12 text-center">
             <h1 className="text-5xl font-bold mb-4">
               <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
                 Create a Competition

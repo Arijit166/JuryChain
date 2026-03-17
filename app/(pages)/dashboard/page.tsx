@@ -62,8 +62,12 @@ export default function Dashboard() {
 
       {/* Header */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-5xl font-bold text-white mb-2">My Dashboard</h1>
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl font-bold mb-2">
+            <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+              My Dashboard
+            </span>
+          </h1>
           <p className="text-xl text-gray-400">Manage your competitions, judging tasks, and prizes</p>
         </div>
       </section>
@@ -71,7 +75,7 @@ export default function Dashboard() {
       {/* Tabs */}
       <div className="sticky top-16 z-40 border-b border-cyan-500/10 bg-background/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-8 overflow-x-auto">
+          <div className="flex gap-8 overflow-x-auto justify-center">
             {(['profile', 'competitions', 'judging', 'prizes'] as const).map((tab) => (
               <button
                 key={tab}

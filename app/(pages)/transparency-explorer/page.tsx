@@ -70,8 +70,15 @@ export default function TransparencyExplorer() {
     },
   ];
 
+  const tabTypeMap: Record<typeof activeTab, TransparencyRecord['type']> = {
+    competitions: 'competition',
+    votes: 'vote',
+    proofs: 'proof',
+    transactions: 'transaction',
+  };
+
   const filteredRecords = records.filter((record) => {
-    const matchesTab = record.type === activeTab;
+    const matchesTab = record.type === tabTypeMap[activeTab];
     const matchesSearch = record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          record.hash.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
@@ -89,8 +96,12 @@ export default function TransparencyExplorer() {
 
       {/* Hero Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-5xl font-bold text-white mb-2">Transparency Explorer</h1>
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl font-bold mb-2">
+            <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+              Transparency Explorer
+            </span>
+          </h1>
           <p className="text-xl text-gray-400">
             Verify all competition data, votes, and smart contract transactions on-chain
           </p>
@@ -137,7 +148,7 @@ export default function TransparencyExplorer() {
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 {' '}
-                <span className="text-xs text-gray-500">({records.filter(r => r.type === tab).length})</span>
+                <span className="text-xs text-gray-500">({records.filter(r => r.type === tabTypeMap[tab]).length})</span>
               </button>
             ))}
           </div>
