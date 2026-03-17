@@ -3,142 +3,193 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isLoggedIn, isLoading, login, logout, userInfo } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const handleLogout = () => setShowLogoutConfirm(true);
+  const confirmLogout = async () => { await logout(); setShowLogoutConfirm(false); };
 
   return (
-    <nav className="glass-card sticky top-0 z-50 border-t-0 border-l-0 border-r-0 rounded-none">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            {/* JuryChain SVG Icon: gavel + blockchain hex motif */}
-            <div className="relative w-11 h-11 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_8px_rgba(0,217,255,0.6)]">
-                <defs>
-                  <linearGradient id="jc-logo-g1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#00d9ff" />
-                    <stop offset="100%" stopColor="#9d4edd" />
-                  </linearGradient>
-                  <linearGradient id="jc-logo-g2" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#9d4edd" />
-                    <stop offset="100%" stopColor="#00d9ff" />
-                  </linearGradient>
-                  <filter id="jc-glow">
-                    <feGaussianBlur stdDeviation="1.2" result="blur" />
-                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                  </filter>
-                </defs>
-                {/* Outer hex ring */}
-                <polygon
-                  points="18,2 31,9.5 31,26.5 18,34 5,26.5 5,9.5"
-                  stroke="url(#jc-logo-g1)"
-                  strokeWidth="1.5"
-                  fill="rgba(0,217,255,0.06)"
-                  filter="url(#jc-glow)"
-                />
-                {/* Inner hex */}
-                <polygon
-                  points="18,8 26,12.5 26,23.5 18,28 10,23.5 10,12.5"
-                  stroke="url(#jc-logo-g2)"
-                  strokeWidth="1"
-                  fill="rgba(157,78,221,0.1)"
-                />
-                {/* Gavel head */}
-                <rect
-                  x="14" y="13" width="10" height="5" rx="1.5"
-                  fill="url(#jc-logo-g1)"
-                />
-                {/* Gavel handle */}
-                <rect
-                  x="17.5" y="18" width="2.5" height="7" rx="1"
-                  fill="url(#jc-logo-g2)"
-                />
-                {/* Chain link dots */}
-                <circle cx="10" cy="18" r="1.5" fill="#00d9ff" opacity="0.8" />
-                <circle cx="26" cy="18" r="1.5" fill="#9d4edd" opacity="0.8" />
-                <circle cx="18" cy="8" r="1.2" fill="#00d9ff" opacity="0.6" />
-              </svg>
-            </div>
-            <div className="flex flex-col leading-none hidden sm:flex">
-              <span className="text-base font-bold bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent tracking-wide">
-                JuryChain
-              </span>
-            </div>
-          </Link>
+    <>
+      <nav className="glass-card sticky top-0 z-50 border-t-0 border-l-0 border-r-0 rounded-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2.5 group">
+              {/* JuryChain SVG Icon: gavel + blockchain hex motif */}
+              <div className="relative w-11 h-11 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_8px_rgba(0,217,255,0.6)]">
+                  <defs>
+                    <linearGradient id="jc-logo-g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#00d9ff" />
+                      <stop offset="100%" stopColor="#9d4edd" />
+                    </linearGradient>
+                    <linearGradient id="jc-logo-g2" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#9d4edd" />
+                      <stop offset="100%" stopColor="#00d9ff" />
+                    </linearGradient>
+                    <filter id="jc-glow">
+                      <feGaussianBlur stdDeviation="1.2" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                  </defs>
+                  {/* Outer hex ring */}
+                  <polygon
+                    points="18,2 31,9.5 31,26.5 18,34 5,26.5 5,9.5"
+                    stroke="url(#jc-logo-g1)"
+                    strokeWidth="1.5"
+                    fill="rgba(0,217,255,0.06)"
+                    filter="url(#jc-glow)"
+                  />
+                  {/* Inner hex */}
+                  <polygon
+                    points="18,8 26,12.5 26,23.5 18,28 10,23.5 10,12.5"
+                    stroke="url(#jc-logo-g2)"
+                    strokeWidth="1"
+                    fill="rgba(157,78,221,0.1)"
+                  />
+                  {/* Gavel head */}
+                  <rect
+                    x="14" y="13" width="10" height="5" rx="1.5"
+                    fill="url(#jc-logo-g1)"
+                  />
+                  {/* Gavel handle */}
+                  <rect
+                    x="17.5" y="18" width="2.5" height="7" rx="1"
+                    fill="url(#jc-logo-g2)"
+                  />
+                  {/* Chain link dots */}
+                  <circle cx="10" cy="18" r="1.5" fill="#00d9ff" opacity="0.8" />
+                  <circle cx="26" cy="18" r="1.5" fill="#9d4edd" opacity="0.8" />
+                  <circle cx="18" cy="8" r="1.2" fill="#00d9ff" opacity="0.6" />
+                </svg>
+              </div>
+              <div className="flex flex-col leading-none hidden sm:flex">
+                <span className="text-base font-bold bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent tracking-wide">
+                  JuryChain
+                </span>
+              </div>
+            </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/explore" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
-              Explore
-            </Link>
-            <Link href="/create-competition" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
-              Create
-            </Link>
-            <Link href="/transparency-explorer" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
-              Transparency
-            </Link>
-            <Link href="/dashboard" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
-              Dashboard
-            </Link>
-          </div>
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-8">
+              <Link href="/explore" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
+                Explore
+              </Link>
+              <Link href="/create-competition" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
+                Create
+              </Link>
+              <Link href="/transparency-explorer" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
+                Transparency
+              </Link>
+              <Link href="/dashboard" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
+                Dashboard
+              </Link>
+            </div>
 
-          {/* Connect Wallet Button */}
-          <div className="hidden md:flex items-center gap-4">
-            <button className="btn-ghost-neon text-base">
-              Connect Wallet
+            {/* Connect Wallet Button */}
+            <div className="hidden md:flex items-center gap-4">
+              {isLoggedIn ? (
+                <div className="flex items-center gap-3">
+                  {userInfo?.profileImage && (
+                    <img src={userInfo.profileImage} alt="avatar" className="w-8 h-8 rounded-full border border-cyan-500/50" />
+                  )}
+                  <span className="text-xs text-gray-400 font-mono">
+                    {userInfo?.walletAddress?.slice(0, 6)}...{userInfo?.walletAddress?.slice(-4)}
+                  </span>
+                  <button onClick={handleLogout} className="btn-ghost-neon text-base flex items-center gap-1">
+                    <LogOut className="w-4 h-4" /> Logout
+                  </button>
+                </div>
+              ) : (
+                <button onClick={login} disabled={isLoading} className="btn-ghost-neon text-base">
+                  {isLoading ? 'Loading...' : 'Connect Wallet'}
+                </button>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden p-2 hover:bg-cyan-500/10 rounded-lg transition-colors duration-300"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5 text-cyan-300" />
+              ) : (
+                <Menu className="w-5 h-5 text-cyan-300" />
+              )}
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 hover:bg-cyan-500/10 rounded-lg transition-colors duration-300"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="w-5 h-5 text-cyan-300" />
-            ) : (
-              <Menu className="w-5 h-5 text-cyan-300" />
-            )}
-          </button>
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <div className="md:hidden pb-4 border-t border-cyan-500/20 animate-float-up">
+              <div className="flex flex-col gap-3 mt-4">
+                <Link
+                  href="/explore"
+                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
+                >
+                  Explore
+                </Link>
+                <Link
+                  href="/create-competition"
+                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
+                >
+                  Create
+                </Link>
+                <Link
+                  href="/transparency-explorer"
+                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
+                >
+                  Transparency
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
+                >
+                  Dashboard
+                </Link>
+                {isLoggedIn ? (
+                  <button onClick={handleLogout} className="btn-ghost-neon text-sm w-full justify-center mt-2 flex items-center gap-2">
+                    <LogOut className="w-4 h-4" /> Logout
+                  </button>
+                ) : (
+                  <button onClick={login} disabled={isLoading} className="btn-ghost-neon text-sm w-full justify-center mt-2">
+                    {isLoading ? 'Connecting...' : 'Connect Wallet'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-cyan-500/20 animate-float-up">
-            <div className="flex flex-col gap-3 mt-4">
-              <Link
-                href="/explore"
-                className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
+      </nav>
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="glass-card p-8 max-w-sm w-full mx-4 border-cyan-500/20 text-center">
+            <div className="text-3xl mb-3">👋</div>
+            <h3 className="text-lg font-bold text-white mb-2">Disconnect Wallet?</h3>
+            <p className="text-gray-400 text-sm mb-6">You’ll need to connect your wallet again to continue.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700/50 transition-colors"
               >
-                Explore
-              </Link>
-              <Link
-                href="/create-competition"
-                className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 btn-ghost-neon flex items-center justify-center gap-2"
               >
-                Create
-              </Link>
-              <Link
-                href="/transparency-explorer"
-                className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
-              >
-                Transparency
-              </Link>
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
-              >
-                Dashboard
-              </Link>
-              <button className="btn-ghost-neon text-sm w-full justify-center mt-2">
-                Connect Wallet
+                <LogOut className="w-4 h-4" /> Yes, Logout
               </button>
             </div>
           </div>
-        )}
-      </div>
-    </nav>
+        </div>
+      )}
+    </>
   );
 }

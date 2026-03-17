@@ -2,8 +2,10 @@
 
 import { ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 export function HeroSection() {
+  const { login, isLoggedIn } = useAuth();
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Animated Background Grid */}
@@ -42,10 +44,12 @@ export function HeroSection() {
             Explore Competitions
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <button className="btn-ghost-neon flex items-center justify-center gap-2">
-            Connect Wallet
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          {!isLoggedIn && (
+            <button onClick={login} className="btn-ghost-neon flex items-center justify-center gap-2">
+              Connect Wallet
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Quick Stats */}
