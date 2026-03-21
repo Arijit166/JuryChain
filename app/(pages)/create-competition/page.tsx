@@ -21,6 +21,8 @@ export default function CreateCompetitionPage() {
     submissionDeadlineTime: '23:59',
     votingDeadlineDate: '',
     votingDeadlineTime: '23:59',
+    venue: '',
+    teamSize: '5',
     isPublic: true,
   });
 
@@ -94,6 +96,8 @@ export default function CreateCompetitionPage() {
           startDate: `${formData.startDate}T${formData.startTime}`,
           submissionDeadline: `${formData.submissionDeadlineDate}T${formData.submissionDeadlineTime}`,
           votingDeadline: `${formData.votingDeadlineDate}T${formData.votingDeadlineTime}`,
+          venue: formData.venue,
+          teamSize: Number(formData.teamSize),
           judges,
           judgeMerkleRoot,
           isPublic: formData.isPublic,
@@ -202,10 +206,48 @@ export default function CreateCompetitionPage() {
                 </div>
               </div>
 
+              {/* Venue & Team */}
+              <div className="border-t border-cyan-500/10 pt-8">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-full bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300 text-sm font-bold">2</span>
+                  Venue & Team
+                </h2>
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-white mb-2">Venue / Platform *</label>
+                    <input
+                      type="text"
+                      name="venue"
+                      placeholder="e.g., Online / Devfolio / ETHGlobal"
+                      value={formData.venue}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-white mb-2">Max Team Size *</label>
+                    <select
+                      name="teamSize"
+                      value={formData.teamSize}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                    >
+                      <option value="1">Solo only</option>
+                      <option value="2">Up to 2</option>
+                      <option value="3">Up to 3</option>
+                      <option value="4">Up to 4</option>
+                      <option value="5">Up to 5</option>
+                      <option value="10">Up to 10</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               {/* Prize & Timeline */}
               <div className="border-t border-cyan-500/10 pt-8">
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/50 flex items-center justify-center text-purple-300 text-sm font-bold">2</span>
+                  <span className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/50 flex items-center justify-center text-purple-300 text-sm font-bold">3</span>
                   Prize & Timeline
                 </h2>
 
@@ -311,7 +353,7 @@ export default function CreateCompetitionPage() {
               {/* Judges */}
               <div className="border-t border-cyan-500/10 pt-8">
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-lime-400/20 border border-lime-400/50 flex items-center justify-center text-lime-300 text-sm font-bold">3</span>
+                  <span className="w-8 h-8 rounded-full bg-lime-400/20 border border-lime-400/50 flex items-center justify-center text-lime-300 text-sm font-bold">4</span>
                   Judges & Settings
                 </h2>
 

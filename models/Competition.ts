@@ -9,6 +9,8 @@ export interface ICompetition extends Document {
     submissionDeadline: Date;
     startDate: Date;
     votingDeadline: Date;
+    venue: string;
+    teamSize: number;
     judges: Array<{ type: 'wallet' | 'email'; value: string }>;
     judgeMerkleRoot: string;     // bytes32 from contract
     isPublic: boolean;
@@ -28,6 +30,8 @@ const CompetitionSchema = new Schema<ICompetition>(
         prizePoolPOL: { type: Number, required: true },
         numWinners: { type: Number, required: true },
         submissionDeadline: { type: Date, required: true },
+        venue: { type: String, required: true },
+        teamSize: { type: Number, required: true, default: 5 },
         startDate: { type: Date, required: true },
         votingDeadline: { type: Date, required: true },
         judges: [

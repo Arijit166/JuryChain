@@ -19,7 +19,9 @@ export async function POST(req: NextRequest) {
             judgeMerkleRoot,
             isPublic,
             sponsorWallet,
-            txHash,           // sent by client after on-chain tx
+            txHash,
+            venue,
+            teamSize,
             contractCompetitionId,
         } = body;
 
@@ -39,6 +41,7 @@ export async function POST(req: NextRequest) {
         if (new Date(votingDeadline) <= new Date(submissionDeadline)) {
             return NextResponse.json({ error: 'Voting deadline must be after submission deadline' }, { status: 400 });
         }
+        if (!venue) return NextResponse.json({ error: 'Venue is required' }, { status: 400 });
 
         const competition = await Competition.create({
             title,
@@ -49,6 +52,8 @@ export async function POST(req: NextRequest) {
             submissionDeadline: new Date(submissionDeadline),
             startDate: new Date(startDate),
             votingDeadline: new Date(votingDeadline),
+            venue,
+            teamSize: Number(teamSize) || 5,
             judges,
             judgeMerkleRoot: judgeMerkleRoot || ('0x' + '0'.repeat(64)),
             isPublic: Boolean(isPublic),

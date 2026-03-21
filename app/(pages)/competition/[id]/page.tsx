@@ -1,98 +1,147 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, use } from 'react';
 import { Navbar } from '@/components/layout/navbar';
-import { Calendar, Users, Trophy, Lock, Share2, ArrowRight } from 'lucide-react';
+import { Calendar, Users, Trophy, Lock, Clock, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface Competition {
-  id: string;
+  _id: string;
   title: string;
   description: string;
-  category: string;
-  prizePool: number;
-  judges: number;
-  submissions: number;
-  deadline: string;
+  prizePool: string;
+  numWinners: number;
+  startDate: string;
+  submissionDeadline: string;
   votingDeadline: string;
-  status: 'submissions' | 'voting' | 'results';
-  rules: string[];
-  judgeAddresses: string[];
+  judges: Array<{ type: 'wallet' | 'email'; value: string }>;
+  judgeMerkleRoot: string;
+  isPublic: boolean;
+  venue: string;
+  teamSize: number;
+  sponsorWallet: string;
+  txHash: string | null;
+  contractCompetitionId: number | null;
+  status: string;
 }
 
-export default function CompetitionDetails({ params }: { params: { id: string } }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'voting'>('overview');
+const SPLITS: Record<number, { label: string; pct: number }[]> = {
+  1: [{ label: '1st Place', pct: 100 }],
+  3: [{ label: '1st Place', pct: 50 }, { label: '2nd Place', pct: 30 }, { label: '3rd Place', pct: 20 }],
+  5: [{ label: '1st Place', pct: 45 }, { label: '2nd Place', pct: 30 }, { label: '3rd Place', pct: 15 }, { label: '4th Place', pct: 5 }, { label: '5th Place', pct: 5 }],
+  10: [{ label: '1st', pct: 30 }, { label: '2nd', pct: 20 }, { label: '3rd', pct: 15 }, { label: '4th', pct: 10 }, { label: '5th', pct: 7 }, { label: '6th', pct: 7 }, { label: '7th', pct: 3 }, { label: '8th', pct: 3 }, { label: '9th', pct: 2.5 }, { label: '10th', pct: 2.5 }],
+};
 
-  // Mock competition data
-  const competition: Competition = {
-    id: params.id,
-    title: 'Web3 Hackathon 2024',
-    description: 'Build the future of decentralized applications. This hackathon challenges developers to create innovative Web3 solutions that solve real-world problems.',
-    category: 'Hackathon',
-    prizePool: 500000,
-    judges: 12,
-    submissions: 234,
-    deadline: '2024-04-15',
-    votingDeadline: '2024-04-30',
-    status: 'voting',
-    rules: [
-      'All code must be open source',
-      'Teams must submit a working demo',
-      'Previous hackathon winners are welcome',
-      'Maximum team size: 5 members',
-      'Projects must be built during hackathon duration',
-    ],
-    judgeAddresses: [
-      '0x1234...5678',
-      '0x2345...6789',
-      '0x3456...7890',
-    ],
-  };
+function getPhase(comp: Competition): 'upcoming' | 'submissions' | 'voting' | 'ended' {
+  const now = Date.now();
+  if (now < new Date(comp.startDate).getTime()) return 'upcoming';
+  if (now <= new Date(comp.submissionDeadline).getTime()) return 'submissions';
+  if (now <= new Date(comp.votingDeadline).getTime()) return 'voting';
+  return 'ended';
+}
+
+export default function CompetitionDetails({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'voting'>('overview');
+  const [competition, setCompetition] = useState<Competition | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch(`/api/competitions/${id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) setError(data.error);
+        else setCompetition(data.competition);
+      })
+      .catch(() => setError('Failed to load competition'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return (
+    <ProtectedRoute>
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </ProtectedRoute>
+  );
+
+  if (error || !competition) return (
+    <ProtectedRoute>
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-red-400">{error || 'Competition not found'}</p>
+      </main>
+    </ProtectedRoute>
+  );
+
+  const phase = getPhase(competition);
+  const splits = SPLITS[competition.numWinners] || SPLITS[3];
+  const prizeNum = parseFloat(competition.prizePool);
+
+  const phaseColor = {
+    upcoming: 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300',
+    submissions: 'bg-lime-400/20 border-lime-400/50 text-lime-300',
+    voting: 'bg-purple-500/20 border-purple-500/50 text-purple-300',
+    ended: 'bg-gray-500/20 border-gray-500/50 text-gray-300',
+  }[phase];
+
+  const phaseLabel = {
+    upcoming: 'Upcoming',
+    submissions: 'Accepting Submissions',
+    voting: 'Voting Phase',
+    ended: 'Ended',
+  }[phase];
 
   return (
     <ProtectedRoute>
       <main className="min-h-screen bg-background">
         <Navbar />
 
-        {/* Hero Section */}
-        <section className="relative py-16 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-start justify-between gap-6 mb-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="badge-primary">{competition.category}</span>
-                  <span className={`px-3 py-1 text-sm font-semibold rounded-full border ${competition.status === 'submissions' ? 'bg-lime-400/20 border-lime-400/50 text-lime-300' :
-                    competition.status === 'voting' ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' :
-                      'bg-purple-500/20 border-purple-500/50 text-purple-300'
-                    }`}>
-                    {competition.status === 'submissions' ? 'Accepting Submissions' :
-                      competition.status === 'voting' ? 'Voting Phase' :
-                        'Results Available'}
-                  </span>
-                </div>
-                <h1 className="text-5xl sm:text-6xl font-bold text-white mb-4">{competition.title}</h1>
-                <p className="text-xl text-gray-400">{competition.description}</p>
-              </div>
-              <button className="flex items-center gap-2 px-6 py-3 bg-cyan-500/20 border border-cyan-500/50 rounded-lg hover:bg-cyan-500/30 transition-colors duration-300 text-cyan-300">
-                <Share2 className="w-5 h-5" />
-                Share
-              </button>
+        {/* Back button */}
+        <div className="px-4 sm:px-6 lg:px-8 pt-6 max-w-4xl mx-auto w-full text-left">
+          <Link
+            href="/explore"
+            className="inline-flex items-center gap-2.5 text-sm font-bold text-cyan-300 transition-all duration-300 group px-6 py-2.5 border border-cyan-500/40 rounded-xl bg-cyan-500/10 hover:border-cyan-500 hover:bg-cyan-500/20 hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] shadow-sm"
+          >
+            <svg className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </Link>
+        </div>
+
+        {/* Hero */}
+        <section className="py-10 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
+              <span className={`px-3 py-1 text-sm font-semibold rounded-full border ${phaseColor}`}>
+                {phaseLabel}
+              </span>
+              {competition.isPublic
+                ? <span className="badge-primary">Public</span>
+                : <span className="badge-secondary">Private</span>}
             </div>
+            <h1 className="text-4xl sm:text-5xl font-bold mb-3">
+              <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                {competition.title}
+              </span>
+            </h1>
+            <p className="text-base text-gray-400 max-w-2xl mx-auto">{competition.description}</p>
           </div>
         </section>
 
         {/* Tabs */}
         <div className="sticky top-16 z-40 border-b border-cyan-500/10 bg-background/80 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex gap-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-center gap-2">
               {(['overview', 'timeline', 'voting'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`py-4 px-2 font-semibold transition-all duration-300 border-b-2 ${activeTab === tab
-                    ? 'border-cyan-500 text-cyan-300'
-                    : 'border-transparent text-gray-400 hover:text-cyan-300'
+                  className={`py-3 px-6 font-semibold text-sm transition-all duration-300 border-b-2 ${activeTab === tab
+                      ? 'border-cyan-500 text-cyan-300'
+                      : 'border-transparent text-gray-500 hover:text-cyan-400'
                     }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -103,44 +152,47 @@ export default function CompetitionDetails({ params }: { params: { id: string } 
         </div>
 
         {/* Content */}
-        <section className="relative py-16 px-4 sm:px-6 lg:px-8">
+        <section className="py-16 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
+
             {activeTab === 'overview' && (
               <div className="grid lg:grid-cols-3 gap-8">
-                {/* Main Content */}
                 <div className="lg:col-span-2 space-y-8">
-                  {/* Rules Section */}
+
+                  {/* Rules */}
                   <div className="glass-card p-8 border-cyan-500/20">
                     <h2 className="text-2xl font-bold text-white mb-4">Competition Rules</h2>
-                    <ul className="space-y-3">
-                      {competition.rules.map((rule, idx) => (
-                        <li key={idx} className="flex gap-3 text-gray-400">
-                          <span className="text-cyan-300 font-bold min-w-fit">•</span>
-                          <span>{rule}</span>
-                        </li>
-                      ))}
+                    <ul className="space-y-3 text-gray-400">
+                      <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Maximum team size: {competition.teamSize} member{competition.teamSize > 1 ? 's' : ''}</span></li>
+                      <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Submissions close: {new Date(competition.submissionDeadline).toLocaleString()}</span></li>
+                      <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Voting closes: {new Date(competition.votingDeadline).toLocaleString()}</span></li>
+                      <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>{competition.isPublic ? 'Open to all participants' : 'Invite-only competition'}</span></li>
+                      <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Prize distribution is automatic via smart contract</span></li>
                     </ul>
+                  </div>
+
+                  {/* Venue */}
+                  <div className="glass-card p-8 border-cyan-500/20">
+                    <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-cyan-300" /> Venue
+                    </h2>
+                    <p className="text-gray-400">{competition.venue}</p>
                   </div>
 
                   {/* Prize Distribution */}
                   <div className="glass-card p-8 border-purple-500/20">
                     <h2 className="text-2xl font-bold text-white mb-6">Prize Distribution</h2>
                     <div className="space-y-4">
-                      {[
-                        { place: '1st Place', prize: '$250K', percentage: 50 },
-                        { place: '2nd Place', prize: '$150K', percentage: 30 },
-                        { place: '3rd Place', prize: '$100K', percentage: 20 },
-                      ].map((award, idx) => (
+                      {splits.map((s, idx) => (
                         <div key={idx}>
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-white font-semibold">{award.place}</span>
-                            <span className="text-cyan-300 font-bold">{award.prize}</span>
+                            <span className="text-white font-semibold">{s.label}</span>
+                            <span className="text-cyan-300 font-bold">
+                              {((prizeNum * s.pct) / 100).toFixed(2)} POL <span className="text-gray-500 text-xs">({s.pct}%)</span>
+                            </span>
                           </div>
                           <div className="h-2 bg-black/50 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-purple-500 to-cyan-500"
-                              style={{ width: `${award.percentage}%` }}
-                            ></div>
+                            <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-500" style={{ width: `${s.pct}%` }} />
                           </div>
                         </div>
                       ))}
@@ -150,57 +202,79 @@ export default function CompetitionDetails({ params }: { params: { id: string } 
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                  {/* Prize Pool Card */}
+                  {/* Prize */}
                   <div className="glass-card p-6 border-lime-400/20">
                     <div className="text-sm text-gray-400 mb-2">Total Prize Pool</div>
-                    <div className="text-4xl font-bold text-lime-300 mb-4">${(competition.prizePool / 1000).toFixed(0)}K</div>
+                    <div className="text-4xl font-bold text-lime-300 mb-1">{competition.prizePool} POL</div>
                     <div className="flex items-center gap-2 text-sm text-green-400 mb-4">
                       <Lock className="w-4 h-4" />
-                      <span>Escrowed & Verified</span>
+                      <span>Escrowed on Polygon</span>
                     </div>
-                    <Link href={`/submit-project/${competition.id}`} className="btn-neon-lime w-full text-center">
-                      Submit Project
-                    </Link>
+                    {competition.txHash && (
+                      <a
+                        href={`https://amoy.polygonscan.com/tx/${competition.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-cyan-400 underline hover:text-cyan-200 block mb-4 font-mono truncate"
+                      >
+                        {competition.txHash.slice(0, 16)}...{competition.txHash.slice(-8)}
+                      </a>
+                    )}
+                    {phase === 'submissions' && (
+                      <Link href={`/submit-project/${competition._id}`} className="btn-neon-lime w-full text-center block">
+                        Submit Project
+                      </Link>
+                    )}
                   </div>
 
-                  {/* Stats Card */}
+                  {/* Stats */}
                   <div className="glass-card p-6 border-cyan-500/20 space-y-4">
                     <div className="flex items-center gap-3">
                       <Users className="w-5 h-5 text-purple-300" />
                       <div>
                         <div className="text-sm text-gray-400">Judges</div>
-                        <div className="text-2xl font-bold text-white">{competition.judges}</div>
+                        <div className="text-2xl font-bold text-white">{competition.judges.length}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Trophy className="w-5 h-5 text-lime-300" />
                       <div>
-                        <div className="text-sm text-gray-400">Submissions</div>
-                        <div className="text-2xl font-bold text-white">{competition.submissions}</div>
+                        <div className="text-sm text-gray-400">Winners</div>
+                        <div className="text-2xl font-bold text-white">{competition.numWinners}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-cyan-300" />
+                      <div>
+                        <div className="text-sm text-gray-400">Starts</div>
+                        <div className="text-sm font-bold text-white">{new Date(competition.startDate).toLocaleString()}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Calendar className="w-5 h-5 text-cyan-300" />
                       <div>
-                        <div className="text-sm text-gray-400">Deadline</div>
-                        <div className="text-lg font-bold text-white">{competition.deadline}</div>
+                        <div className="text-sm text-gray-400">Submit By</div>
+                        <div className="text-sm font-bold text-white">{new Date(competition.submissionDeadline).toLocaleString()}</div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Judge Section */}
+                  {/* Judges */}
                   <div className="glass-card p-6 border-purple-500/20">
-                    <h3 className="text-lg font-bold text-white mb-3">Judges</h3>
-                    <div className="space-y-2 mb-4">
-                      {competition.judgeAddresses.map((addr, idx) => (
-                        <div key={idx} className="text-sm text-gray-400 font-mono">
-                          {addr}
+                    <h3 className="text-lg font-bold text-white mb-3">Judges ({competition.judges.length})</h3>
+                    <div className="space-y-2">
+                      {competition.judges.map((j, idx) => (
+                        <div key={idx} className="p-2 bg-black/30 rounded border border-purple-500/10">
+                          <div className="text-xs text-gray-500 mb-0.5">{j.type === 'wallet' ? 'Wallet' : 'Email'}</div>
+                          <div className="text-xs text-gray-300 font-mono truncate">{j.value}</div>
                         </div>
                       ))}
                     </div>
-                    <Link href={`/judge-dashboard?competition=${competition.id}`} className="btn-ghost-neon w-full text-center text-sm py-2">
-                      Judge This
-                    </Link>
+                    {phase === 'voting' && (
+                      <Link href={`/judge-dashboard?competition=${competition._id}`} className="btn-ghost-neon w-full text-center text-sm py-2 block mt-4">
+                        Judge This
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
@@ -210,21 +284,20 @@ export default function CompetitionDetails({ params }: { params: { id: string } 
               <div className="max-w-2xl">
                 <div className="space-y-6">
                   {[
-                    { phase: 'Submissions', start: '2024-03-15', end: '2024-04-15', status: 'active', description: 'Teams submit their projects and demos' },
-                    { phase: 'Voting', start: '2024-04-16', end: '2024-04-30', status: 'pending', description: 'Judges review and vote on projects' },
-                    { phase: 'Results', start: '2024-05-01', end: '2024-05-01', status: 'pending', description: 'Winners announced and prizes distributed' },
+                    { phase: 'Competition Start', date: competition.startDate, done: Date.now() >= new Date(competition.startDate).getTime(), desc: 'Competition opens for participants' },
+                    { phase: 'Submission Deadline', date: competition.submissionDeadline, done: Date.now() >= new Date(competition.submissionDeadline).getTime(), desc: 'Last date to submit your project' },
+                    { phase: 'Voting Deadline', date: competition.votingDeadline, done: Date.now() >= new Date(competition.votingDeadline).getTime(), desc: 'Judges complete their voting' },
+                    { phase: 'Prize Distribution', date: competition.votingDeadline, done: false, desc: 'Winners receive prizes automatically via smart contract' },
                   ].map((item, idx) => (
                     <div key={idx} className="glass-card p-6 border-cyan-500/20 flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className={`w-4 h-4 rounded-full ${item.status === 'active' ? 'bg-cyan-500' : 'bg-gray-600'}`}></div>
-                        {idx < 2 && <div className="w-1 h-12 bg-gradient-to-b from-cyan-500/50 to-gray-600/50 my-2"></div>}
+                        <div className={`w-4 h-4 rounded-full ${item.done ? 'bg-cyan-500' : 'bg-gray-600'}`} />
+                        {idx < 3 && <div className="w-1 h-12 bg-gradient-to-b from-cyan-500/50 to-gray-600/50 my-2" />}
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-white mb-2">{item.phase}</h3>
-                        <p className="text-sm text-gray-400 mb-2">{item.description}</p>
-                        <div className="text-xs text-gray-500">
-                          {item.start} → {item.end}
-                        </div>
+                        <h3 className="text-lg font-bold text-white mb-1">{item.phase}</h3>
+                        <p className="text-sm text-gray-400 mb-2">{item.desc}</p>
+                        <div className="text-xs text-gray-500">{new Date(item.date).toLocaleString()}</div>
                       </div>
                     </div>
                   ))}
@@ -235,52 +308,41 @@ export default function CompetitionDetails({ params }: { params: { id: string } 
             {activeTab === 'voting' && (
               <div className="max-w-2xl">
                 <div className="glass-card p-8 border-cyan-500/20">
-                  <h2 className="text-2xl font-bold text-white mb-6">Voting Progress</h2>
-
-                  {/* Vote Count */}
-                  <div className="mb-8">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-400">Votes Cast</span>
-                      <span className="text-cyan-300 font-bold">8 / 12</span>
-                    </div>
-                    <div className="h-2 bg-black/50 rounded-full overflow-hidden">
-                      <div className="h-full w-2/3 bg-gradient-to-r from-cyan-500 to-purple-500"></div>
-                    </div>
-                  </div>
-
-                  {/* Commit/Reveal Info */}
-                  <div className="space-y-4 mb-8 p-4 bg-black/30 rounded-lg border border-cyan-500/10">
-                    <div>
-                      <h3 className="text-white font-semibold mb-2">Commit Phase</h3>
-                      <p className="text-sm text-gray-400">
-                        Judges submit vote commitments (hash of vote + secret). This phase ends on 2024-04-25.
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-white font-semibold mb-2">Reveal Phase</h3>
-                      <p className="text-sm text-gray-400">
-                        After commit phase closes, judges reveal their votes using the original secret. Votes are verified on-chain.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Judge Stats */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <h2 className="text-2xl font-bold text-white mb-6">Voting Info</h2>
+                  <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="p-4 bg-black/30 rounded-lg border border-cyan-500/10">
                       <div className="text-sm text-gray-400 mb-1">Total Judges</div>
-                      <div className="text-2xl font-bold text-cyan-300">{competition.judges}</div>
+                      <div className="text-2xl font-bold text-cyan-300">{competition.judges.length}</div>
                     </div>
                     <div className="p-4 bg-black/30 rounded-lg border border-cyan-500/10">
-                      <div className="text-sm text-gray-400 mb-1">Voted</div>
-                      <div className="text-2xl font-bold text-lime-300">8</div>
+                      <div className="text-sm text-gray-400 mb-1">Merkle Root</div>
+                      <div className="text-xs text-purple-300 font-mono break-all">{competition.judgeMerkleRoot?.slice(0, 18)}...</div>
+                    </div>
+                  </div>
+                  <div className="space-y-4 p-4 bg-black/30 rounded-lg border border-cyan-500/10">
+                    <div>
+                      <h3 className="text-white font-semibold mb-1">Voting Phase</h3>
+                      <p className="text-sm text-gray-400">
+                        Opens: {new Date(competition.submissionDeadline).toLocaleString()}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Closes: {new Date(competition.votingDeadline).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold mb-1">Prize Distribution</h3>
+                      <p className="text-sm text-gray-400">
+                        Automatic after voting closes. Smart contract distributes {competition.prizePool} POL to {competition.numWinners} winner{competition.numWinners > 1 ? 's' : ''}.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             )}
+
           </div>
         </section>
       </main>
-    </ProtectedRoute>
+    </ProtectedRoute >
   );
 }
