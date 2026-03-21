@@ -4,7 +4,7 @@ export interface ICompetition extends Document {
     title: string;
     description: string;
     prizePool: string;           // stored as string (wei amount from contract)
-    prizePoolUSD: number;        // human-readable amount sponsor typed
+    prizePoolPOL: number;        // human-readable amount sponsor typed
     numWinners: number;
     submissionDeadline: Date;
     startDate: Date;
@@ -25,7 +25,7 @@ const CompetitionSchema = new Schema<ICompetition>(
         title: { type: String, required: true },
         description: { type: String, required: true },
         prizePool: { type: String, required: true },
-        prizePoolUSD: { type: Number, required: true },
+        prizePoolPOL: { type: Number, required: true },
         numWinners: { type: Number, required: true },
         submissionDeadline: { type: Date, required: true },
         startDate: { type: Date, required: true },

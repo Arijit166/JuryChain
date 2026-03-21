@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
         const {
             title,
             description,
-            prizePoolUSD,
+            prizePoolPOL,
             numWinners,
             submissionDeadline,
             startDate,
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         } = body;
 
         // Basic validation
-        if (!title || !description || !prizePoolUSD || !sponsorWallet) {
+        if (!title || !description || !prizePoolPOL || !sponsorWallet) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
         if (!judges || judges.length < 3) {
@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
         const competition = await Competition.create({
             title,
             description,
-            prizePool: String(prizePoolUSD),   // store as string; wei handled on-chain
-            prizePoolUSD: Number(prizePoolUSD),
+            prizePool: String(prizePoolPOL),   // store as string; wei handled on-chain
+            prizePoolPOL: Number(prizePoolPOL),
             numWinners: Number(numWinners),
             submissionDeadline: new Date(submissionDeadline),
             startDate: new Date(startDate),
