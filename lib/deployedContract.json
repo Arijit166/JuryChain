@@ -1,5 +1,5 @@
 {
-  "address": "0xd6349b19D8dbC91220395DeE12fFbE73362e7A13",
+  "address": "0xe6A394A9fE9B8acCD981FDf66661b32276CF333e",
   "abi": [
     {
       "anonymous": false,
@@ -33,6 +33,12 @@
           "internalType": "bool",
           "name": "isPublic",
           "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256[]",
+          "name": "splits",
+          "type": "uint256[]"
         }
       ],
       "name": "CompetitionCreated",
@@ -95,12 +101,12 @@
         },
         {
           "internalType": "uint256",
-          "name": "submissionDeadline",
+          "name": "startTime",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "startTime",
+          "name": "submissionDeadline",
           "type": "uint256"
         },
         {
@@ -187,11 +193,6 @@
           "internalType": "address[]",
           "name": "_winners",
           "type": "address[]"
-        },
-        {
-          "internalType": "uint256[]",
-          "name": "_amounts",
-          "type": "uint256[]"
         }
       ],
       "name": "distributePrizes",
@@ -233,12 +234,12 @@
             },
             {
               "internalType": "uint256",
-              "name": "submissionDeadline",
+              "name": "startTime",
               "type": "uint256"
             },
             {
               "internalType": "uint256",
-              "name": "startTime",
+              "name": "submissionDeadline",
               "type": "uint256"
             },
             {
@@ -276,8 +277,70 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "getExpectedPrizes",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "amounts",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "getPrizeSplits",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "nextId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "prizeSplits",
       "outputs": [
         {
           "internalType": "uint256",
