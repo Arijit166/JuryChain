@@ -13,3 +13,6 @@ package-lock.json
 pnpm-lock.yaml
 components.json
 postcss.config.mjs
+contracts/cache
+contracts/artifacts
+contracts/typechain-types

@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
             prizePoolUSD,
             numWinners,
             submissionDeadline,
+            startDate,
             votingDeadline,
             judges,
             judgeMerkleRoot,
@@ -29,8 +30,11 @@ export async function POST(req: NextRequest) {
         if (!judges || judges.length < 3) {
             return NextResponse.json({ error: 'At least 3 judges required' }, { status: 400 });
         }
-        if (new Date(submissionDeadline) <= new Date()) {
-            return NextResponse.json({ error: 'Submission deadline must be in the future' }, { status: 400 });
+        if (new Date(startDate) <= new Date()) {
+            return NextResponse.json({ error: 'Start date must be in the future' }, { status: 400 });
+        }
+        if (new Date(submissionDeadline) <= new Date(startDate)) {
+            return NextResponse.json({ error: 'Submission deadline must be after start date' }, { status: 400 });
         }
         if (new Date(votingDeadline) <= new Date(submissionDeadline)) {
             return NextResponse.json({ error: 'Voting deadline must be after submission deadline' }, { status: 400 });
@@ -43,6 +47,7 @@ export async function POST(req: NextRequest) {
             prizePoolUSD: Number(prizePoolUSD),
             numWinners: Number(numWinners),
             submissionDeadline: new Date(submissionDeadline),
+            startDate: new Date(startDate),
             votingDeadline: new Date(votingDeadline),
             judges,
             judgeMerkleRoot: judgeMerkleRoot || ('0x' + '0'.repeat(64)),

@@ -15,8 +15,12 @@ export default function CreateCompetitionPage() {
     description: '',
     prizePool: '',
     winners: '3',
-    submissionDeadline: '',
-    votingDeadline: '',
+    startDate: '',
+    startTime: '00:00',
+    submissionDeadlineDate: '',
+    submissionDeadlineTime: '23:59',
+    votingDeadlineDate: '',
+    votingDeadlineTime: '23:59',
     isPublic: true,
   });
 
@@ -55,14 +59,16 @@ export default function CreateCompetitionPage() {
 
       const judgeMerkleRoot = buildMerkleRootFromJudges(judges);
 
-      const submissionTs = Math.floor(new Date(formData.submissionDeadline).getTime() / 1000);
-      const votingTs = Math.floor(new Date(formData.votingDeadline).getTime() / 1000);
+      const startTs = Math.floor(new Date(`${formData.startDate}T${formData.startTime}`).getTime() / 1000);
+      const submissionTs = Math.floor(new Date(`${formData.submissionDeadlineDate}T${formData.submissionDeadlineTime}`).getTime() / 1000);
+      const votingTs = Math.floor(new Date(`${formData.votingDeadlineDate}T${formData.votingDeadlineTime}`).getTime() / 1000);
 
       const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       const prizeInWei = parseEther(formData.prizePool);
 
       const tx = await contract.createCompetition(
         Number(formData.winners),
+        startTs,
         submissionTs,
         votingTs,
         judgeMerkleRoot,
@@ -85,8 +91,9 @@ export default function CreateCompetitionPage() {
           description: formData.description,
           prizePoolUSD: formData.prizePool,
           numWinners: formData.winners,
-          submissionDeadline: formData.submissionDeadline,
-          votingDeadline: formData.votingDeadline,
+          startDate: `${formData.startDate}T${formData.startTime}`,
+          submissionDeadline: `${formData.submissionDeadlineDate}T${formData.submissionDeadlineTime}`,
+          votingDeadline: `${formData.votingDeadlineDate}T${formData.votingDeadlineTime}`,
           judges,
           judgeMerkleRoot,
           isPublic: formData.isPublic,
@@ -204,18 +211,17 @@ export default function CreateCompetitionPage() {
 
                 <div className="grid sm:grid-cols-2 gap-6 mb-6">
                   <div>
-                    <label className="block text-sm font-semibold text-white mb-2">Prize Pool (USD) *</label>
+                    <label className="block text-sm font-semibold text-white mb-2">Prize Pool (POL) *</label>
                     <input
                       type="number"
                       name="prizePool"
-                      placeholder="500000"
+                      placeholder="e.g., 10"
                       value={formData.prizePool}
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-semibold text-white mb-2">Number of Winners *</label>
                     <select
@@ -232,25 +238,68 @@ export default function CreateCompetitionPage() {
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-2">Submission Deadline *</label>
+                {/* Start Date & Time */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-white mb-2">Competition Start *</label>
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <input
                       type="date"
-                      name="submissionDeadline"
-                      value={formData.submissionDeadline}
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={formData.startTime}
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                     />
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-2">Voting Deadline *</label>
+                {/* Submission Deadline */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-white mb-2">Submission Deadline *</label>
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <input
                       type="date"
-                      name="votingDeadline"
-                      value={formData.votingDeadline}
+                      name="submissionDeadlineDate"
+                      value={formData.submissionDeadlineDate}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                    <input
+                      type="time"
+                      name="submissionDeadlineTime"
+                      value={formData.submissionDeadlineTime}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                  </div>
+                </div>
+
+                {/* Voting Deadline */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Voting Deadline *</label>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <input
+                      type="date"
+                      name="votingDeadlineDate"
+                      value={formData.votingDeadlineDate}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                    <input
+                      type="time"
+                      name="votingDeadlineTime"
+                      value={formData.votingDeadlineTime}
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"

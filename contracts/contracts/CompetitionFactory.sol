@@ -8,6 +8,7 @@ contract CompetitionFactory {
         uint256 prizePool;
         uint8 numWinners;
         uint256 submissionDeadline;
+        uint256 startTime;
         uint256 votingDeadline;
         bytes32 judgeMerkleRoot;
         bool isPublic;
@@ -35,6 +36,7 @@ contract CompetitionFactory {
     /// @notice Create + escrow prize in one tx. Send POL as msg.value.
     function createCompetition(
         uint8 _numWinners,
+        uint256 _startTime,
         uint256 _submissionDeadline,
         uint256 _votingDeadline,
         bytes32 _judgeMerkleRoot,
@@ -42,9 +44,10 @@ contract CompetitionFactory {
     ) external payable returns (uint256) {
         require(msg.value > 0, "Prize pool required");
         require(_numWinners > 0 && _numWinners <= 20, "Invalid winners count");
+        require(_startTime >= block.timestamp, "Invalid start time");
         require(
-            _submissionDeadline > block.timestamp,
-            "Invalid submission deadline"
+            _submissionDeadline > _startTime,
+            "Submission must be after start"
         );
         require(
             _votingDeadline > _submissionDeadline,
@@ -57,6 +60,7 @@ contract CompetitionFactory {
             sponsor: msg.sender,
             prizePool: msg.value,
             numWinners: _numWinners,
+            startTime: _startTime,
             submissionDeadline: _submissionDeadline,
             votingDeadline: _votingDeadline,
             judgeMerkleRoot: _judgeMerkleRoot,

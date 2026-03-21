@@ -1,5 +1,5 @@
 {
-  "address": "0x855DA267C76F0902951bB1f93c01662FB7cC03c7",
+  "address": "0xd6349b19D8dbC91220395DeE12fFbE73362e7A13",
   "abi": [
     {
       "anonymous": false,
@@ -100,6 +100,11 @@
         },
         {
           "internalType": "uint256",
+          "name": "startTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
           "name": "votingDeadline",
           "type": "uint256"
         },
@@ -133,6 +138,11 @@
           "internalType": "uint8",
           "name": "_numWinners",
           "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_startTime",
+          "type": "uint256"
         },
         {
           "internalType": "uint256",
@@ -224,6 +234,11 @@
             {
               "internalType": "uint256",
               "name": "submissionDeadline",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "startTime",
               "type": "uint256"
             },
             {

@@ -7,6 +7,7 @@ export interface ICompetition extends Document {
     prizePoolUSD: number;        // human-readable amount sponsor typed
     numWinners: number;
     submissionDeadline: Date;
+    startDate: Date;
     votingDeadline: Date;
     judges: Array<{ type: 'wallet' | 'email'; value: string }>;
     judgeMerkleRoot: string;     // bytes32 from contract
@@ -27,6 +28,7 @@ const CompetitionSchema = new Schema<ICompetition>(
         prizePoolUSD: { type: Number, required: true },
         numWinners: { type: Number, required: true },
         submissionDeadline: { type: Date, required: true },
+        startDate: { type: Date, required: true },
         votingDeadline: { type: Date, required: true },
         judges: [
             {
