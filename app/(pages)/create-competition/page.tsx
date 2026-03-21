@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { Navbar } from '@/components/layout/navbar';
 import { ArrowRight, Check, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { buildMerkleRootFromJudges, CONTRACT_ADDRESS, CONTRACT_ABI } from '@/lib/contract';
+import { BrowserProvider, parseEther, Contract } from 'ethers';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CreateCompetitionPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -20,6 +23,7 @@ export default function CreateCompetitionPage() {
   const [judges, setJudges] = useState<Array<{ type: 'wallet' | 'email'; value: string }>>([]);
   const [judgeInput, setJudgeInput] = useState('');
   const [judgeType, setJudgeType] = useState<'wallet' | 'email'>('wallet');
+  const { provider: web3authProvider } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -37,9 +41,67 @@ export default function CreateCompetitionPage() {
     setJudges(judges.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (judges.length < 3) return;
+
+    try {
+      // Use Web3Auth provider (works for Google Sign-In users too)
+      if (!web3authProvider) throw new Error('Not logged in. Please connect your wallet.');
+
+      const provider = new BrowserProvider(web3authProvider as any);
+      const signer = await provider.getSigner();
+      const sponsorWallet = await signer.getAddress();
+
+      const judgeMerkleRoot = buildMerkleRootFromJudges(judges);
+
+      const submissionTs = Math.floor(new Date(formData.submissionDeadline).getTime() / 1000);
+      const votingTs = Math.floor(new Date(formData.votingDeadline).getTime() / 1000);
+
+      const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      const prizeInWei = parseEther(formData.prizePool);
+
+      const tx = await contract.createCompetition(
+        Number(formData.winners),
+        submissionTs,
+        votingTs,
+        judgeMerkleRoot,
+        formData.isPublic,
+        { value: prizeInWei }
+      );
+
+      const receipt = await tx.wait();
+
+      const event = receipt.logs
+        .map((log: any) => { try { return contract.interface.parseLog(log); } catch { return null; } })
+        .find((e: any) => e?.name === 'CompetitionCreated');
+      const contractCompetitionId = event ? Number(event.args.id) : null;
+
+      const res = await fetch('/api/competitions/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          prizePoolUSD: formData.prizePool,
+          numWinners: formData.winners,
+          submissionDeadline: formData.submissionDeadline,
+          votingDeadline: formData.votingDeadline,
+          judges,
+          judgeMerkleRoot,
+          isPublic: formData.isPublic,
+          sponsorWallet,
+          txHash: receipt.hash,
+          contractCompetitionId,
+        }),
+      });
+
+      if (!res.ok) throw new Error((await res.json()).error);
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Transaction failed');
+    }
   };
 
   if (submitted) {
