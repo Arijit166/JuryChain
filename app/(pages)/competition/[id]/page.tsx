@@ -2,6 +2,8 @@
 
 import { useState, useEffect, use } from 'react';
 import { Navbar } from '@/components/layout/navbar';
+import ApplyModal from '@/components/ApplyModal';
+import { useAuth } from '@/context/AuthContext';
 import { Calendar, Users, Trophy, Lock, Clock, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -18,6 +20,9 @@ interface Competition {
   judges: Array<{ type: 'wallet' | 'email'; value: string }>;
   judgeMerkleRoot: string;
   isPublic: boolean;
+  applyDeadline: string;
+  pptRequired: boolean;
+  category: string;
   venue: string;
   teamSize: number;
   sponsorWallet: string;
@@ -47,6 +52,10 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { userInfo } = useAuth();
+  const [showApply, setShowApply] = useState(false);
+  const [myApplication, setMyApplication] = useState<any>(null);
+  const [appLoading, setAppLoading] = useState(false);
 
   useEffect(() => {
     fetch(`/api/competitions/${id}`)
@@ -58,6 +67,15 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
       .catch(() => setError('Failed to load competition'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!userInfo?.walletAddress || !competition) return;
+    setAppLoading(true);
+    fetch(`/api/applications/status?competitionId=${competition._id}&wallet=${userInfo.walletAddress}`)
+      .then(r => r.json())
+      .then(d => setMyApplication(d.application))
+      .finally(() => setAppLoading(false));
+  }, [userInfo?.walletAddress, competition]);
 
   if (loading) return (
     <ProtectedRoute>
@@ -92,6 +110,10 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
     voting: 'Voting Phase',
     ended: 'Ended',
   }[phase];
+
+  const isOrganizer = userInfo?.walletAddress?.toLowerCase() === competition?.sponsorWallet?.toLowerCase();
+  const isJudge = competition?.judges.some(j => j.type === 'wallet' && j.value.toLowerCase() === userInfo?.walletAddress?.toLowerCase());
+  const canApply = !isOrganizer && !isJudge && phase === 'submissions';
 
   return (
     <ProtectedRoute>
@@ -140,8 +162,8 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`py-3 px-6 font-semibold text-sm transition-all duration-300 border-b-2 ${activeTab === tab
-                      ? 'border-cyan-500 text-cyan-300'
-                      : 'border-transparent text-gray-500 hover:text-cyan-400'
+                    ? 'border-cyan-500 text-cyan-300'
+                    : 'border-transparent text-gray-500 hover:text-cyan-400'
                     }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -164,6 +186,10 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                     <h2 className="text-2xl font-bold text-white mb-4">Competition Rules</h2>
                     <ul className="space-y-3 text-gray-400">
                       <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Maximum team size: {competition.teamSize} member{competition.teamSize > 1 ? 's' : ''}</span></li>
+                      {competition.pptRequired && (
+                        <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Each team must submit a PPT presentation</span></li>
+                      )}
+                      <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Applications close: {new Date(competition.applyDeadline).toLocaleString()}</span></li>
                       <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Submissions close: {new Date(competition.submissionDeadline).toLocaleString()}</span></li>
                       <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>Voting closes: {new Date(competition.votingDeadline).toLocaleString()}</span></li>
                       <li className="flex gap-3"><span className="text-cyan-300 font-bold">•</span><span>{competition.isPublic ? 'Open to all participants' : 'Invite-only competition'}</span></li>
@@ -220,10 +246,22 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                         {competition.txHash.slice(0, 16)}...{competition.txHash.slice(-8)}
                       </a>
                     )}
-                    {phase === 'submissions' && (
-                      <Link href={`/submit-project/${competition._id}`} className="btn-neon-lime w-full text-center block">
-                        Submit Project
-                      </Link>
+                    {phase === 'submissions' && !isOrganizer && !isJudge && (
+                      appLoading ? (
+                        <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                      ) : myApplication ? (
+                        <div className={`w-full py-2 px-4 rounded-lg text-center text-sm font-semibold border ${myApplication.status === 'accepted' ? 'bg-lime-400/20 border-lime-400/50 text-lime-300' :
+                          myApplication.status === 'rejected' ? 'bg-red-400/20 border-red-400/50 text-red-300' :
+                            'bg-gray-500/20 border-gray-500/50 text-gray-300'
+                          }`}>
+                          {myApplication.status === 'accepted' ? '✓ Accepted' :
+                            myApplication.status === 'rejected' ? '✗ Rejected' : '⏳ Applied — Pending'}
+                        </div>
+                      ) : (
+                        <button onClick={() => setShowApply(true)} className="btn-neon-lime w-full text-center block">
+                          Apply Now
+                        </button>
+                      )
                     )}
                   </div>
 
@@ -339,9 +377,17 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                 </div>
               </div>
             )}
-
           </div>
         </section>
+        {showApply && competition && (
+          <ApplyModal
+            competitionId={competition._id}
+            teamSize={competition.teamSize}
+            pptRequired={false}
+            onClose={() => setShowApply(false)}
+            onSuccess={() => { setShowApply(false); setMyApplication({ status: 'pending' }); }}
+          />
+        )}
       </main>
     </ProtectedRoute >
   );

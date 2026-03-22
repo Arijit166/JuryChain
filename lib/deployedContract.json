@@ -1,5 +1,5 @@
 {
-  "address": "0xe6A394A9fE9B8acCD981FDf66661b32276CF333e",
+  "address": "0x66f40D6483B95137311c768EEE0BE3Fa414F5135",
   "abi": [
     {
       "anonymous": false,
@@ -39,6 +39,12 @@
           "internalType": "uint256[]",
           "name": "splits",
           "type": "uint256[]"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "category",
+          "type": "uint8"
         }
       ],
       "name": "CompetitionCreated",
@@ -100,6 +106,11 @@
           "type": "uint8"
         },
         {
+          "internalType": "uint8",
+          "name": "category",
+          "type": "uint8"
+        },
+        {
           "internalType": "uint256",
           "name": "startTime",
           "type": "uint256"
@@ -143,6 +154,11 @@
         {
           "internalType": "uint8",
           "name": "_numWinners",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "_category",
           "type": "uint8"
         },
         {
@@ -230,6 +246,11 @@
             {
               "internalType": "uint8",
               "name": "numWinners",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "category",
               "type": "uint8"
             },
             {

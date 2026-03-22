@@ -83,6 +83,9 @@ export function Navbar() {
               <Link href="/create-competition" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
                 Create
               </Link>
+              <Link href="/my-competitions" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
+                My Competitions
+              </Link>
               <Link href="/transparency-explorer" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
                 Transparency
               </Link>
@@ -140,6 +143,9 @@ export function Navbar() {
                   className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 rounded transition-colors duration-300"
                 >
                   Create
+                </Link>
+                <Link href="/my-competitions" className="text-base text-gray-300 hover:text-cyan-300 transition-colors duration-300">
+                  My Competitions
                 </Link>
                 <Link
                   href="/transparency-explorer"

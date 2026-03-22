@@ -21,6 +21,10 @@ export default function CreateCompetitionPage() {
     submissionDeadlineTime: '23:59',
     votingDeadlineDate: '',
     votingDeadlineTime: '23:59',
+    applyDeadlineDate: '',
+    applyDeadlineTime: '23:59',
+    pptRequired: false,
+    category: 'Any' as 'ML' | 'Web3' | 'IoT' | 'Any',
     venue: '',
     teamSize: '5',
     isPublic: true,
@@ -67,6 +71,7 @@ export default function CreateCompetitionPage() {
 
       const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       const prizeInWei = parseEther(formData.prizePool);
+      const CATEGORY_MAP: Record<string, number> = { Any: 0, ML: 1, Web3: 2, IoT: 3 };
 
       const tx = await contract.createCompetition(
         Number(formData.winners),
@@ -75,6 +80,7 @@ export default function CreateCompetitionPage() {
         votingTs,
         judgeMerkleRoot,
         formData.isPublic,
+        CATEGORY_MAP[formData.category],
         { value: prizeInWei }
       );
 
@@ -96,6 +102,9 @@ export default function CreateCompetitionPage() {
           startDate: `${formData.startDate}T${formData.startTime}`,
           submissionDeadline: `${formData.submissionDeadlineDate}T${formData.submissionDeadlineTime}`,
           votingDeadline: `${formData.votingDeadlineDate}T${formData.votingDeadlineTime}`,
+          applyDeadline: `${formData.applyDeadlineDate}T${formData.applyDeadlineTime}`,
+          pptRequired: formData.pptRequired,
+          category: formData.category,
           venue: formData.venue,
           teamSize: Number(formData.teamSize),
           judges,
@@ -303,6 +312,19 @@ export default function CreateCompetitionPage() {
                   </div>
                 </div>
 
+                {/* Apply Deadline */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-white mb-2">Last Date to Apply *</label>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <input type="date" name="applyDeadlineDate" value={formData.applyDeadlineDate}
+                      onChange={handleInputChange} required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
+                    <input type="time" name="applyDeadlineTime" value={formData.applyDeadlineTime}
+                      onChange={handleInputChange} required
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20" />
+                  </div>
+                </div>
+
                 {/* Submission Deadline */}
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-white mb-2">Submission Deadline *</label>
@@ -346,6 +368,29 @@ export default function CreateCompetitionPage() {
                       required
                       className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                     />
+                  </div>
+                </div>
+
+                {/* Category */}
+                <div className="grid sm:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-white mb-2">Category *</label>
+                    <select name="category" value={formData.category} onChange={handleInputChange}
+                      className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                      <option value="Any">Any</option>
+                      <option value="ML">ML / AI</option>
+                      <option value="Web3">Web3</option>
+                      <option value="IoT">IoT</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-4 p-4 bg-black/30 rounded-lg border border-cyan-500/20 self-end">
+                    <input type="checkbox" id="pptRequired" checked={formData.pptRequired}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pptRequired: e.target.checked }))}
+                      className="w-4 h-4 rounded cursor-pointer" />
+                    <label htmlFor="pptRequired" className="flex-1 cursor-pointer">
+                      <div className="text-sm font-semibold text-white">PPT Required</div>
+                      <div className="text-xs text-gray-400">Teams must submit a presentation</div>
+                    </label>
                   </div>
                 </div>
               </div>

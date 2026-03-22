@@ -18,6 +18,9 @@ interface Competition {
   judges: Array<{ type: string; value: string }>;
   isPublic: boolean;
   status: string;
+  applyDeadline: string;
+  pptRequired: boolean;
+  category: string;
   venue: string;
   teamSize: number;
   sponsorWallet: string;
@@ -78,6 +81,7 @@ export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<Tab>('live');
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   useEffect(() => {
     fetch('/api/competitions/list')
@@ -89,10 +93,12 @@ export default function ExplorePage() {
 
   const classified = competitions.filter((c) => classifyCompetition(c) === activeTab);
 
-  const filtered = classified.filter((comp) =>
-    comp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    comp.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = classified.filter((comp) => {
+    const matchSearch = comp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      comp.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchCat = selectedCategory === 'All' || comp.category === selectedCategory;
+    return matchSearch && matchCat;
+  });
 
   const tabs: Tab[] = ['live', 'upcoming', 'past'];
   const counts = {
@@ -140,14 +146,25 @@ export default function ExplorePage() {
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`px-5 py-2 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${activeTab === tab
-                      ? 'bg-cyan-500 text-black'
-                      : 'bg-black/50 border border-cyan-500/30 text-gray-400 hover:border-cyan-500/50'
+                    ? 'bg-cyan-500 text-black'
+                    : 'bg-black/50 border border-cyan-500/30 text-gray-400 hover:border-cyan-500/50'
                     }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab ? 'bg-black/30' : 'bg-cyan-500/20 text-cyan-300'}`}>
                     {counts[tab]}
                   </span>
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {['All', 'ML', 'Web3', 'IoT', 'Any'].map(cat => (
+                <button key={cat} onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200 ${selectedCategory === cat
+                    ? 'bg-purple-500 text-white border-purple-500'
+                    : 'bg-black/50 border-purple-500/30 text-gray-400 hover:border-purple-500/60'
+                    }`}>
+                  {cat === 'ML' ? 'ML / AI' : cat}
                 </button>
               ))}
             </div>
@@ -179,6 +196,9 @@ export default function ExplorePage() {
                             {comp.title}
                           </h3>
                           <span className="text-xs text-gray-400">{comp.venue}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/20">
+                            {comp.category === 'ML' ? 'ML/AI' : comp.category}
+                          </span>
                         </div>
                         <span className={`px-2 py-1 text-xs font-semibold rounded border shrink-0 ml-2 ${getStatusBadge(tab)}`}>
                           {getStatusLabel(tab)}
