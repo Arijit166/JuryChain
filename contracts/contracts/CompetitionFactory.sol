@@ -7,6 +7,7 @@ contract CompetitionFactory {
         address sponsor;
         uint256 prizePool;
         uint8 numWinners;
+        uint8 category;
         uint256 startTime;
         uint256 submissionDeadline;
         uint256 votingDeadline;
@@ -27,7 +28,8 @@ contract CompetitionFactory {
         uint256 prizePool,
         bytes32 judgeMerkleRoot,
         bool isPublic,
-        uint256[] splits
+        uint256[] splits,
+        uint8 category
     );
 
     event PrizeDistributed(
@@ -84,6 +86,7 @@ contract CompetitionFactory {
 
     function createCompetition(
         uint8 _numWinners,
+        uint8 _category,
         uint256 _startTime,
         uint256 _submissionDeadline,
         uint256 _votingDeadline,
@@ -93,6 +96,7 @@ contract CompetitionFactory {
         require(msg.value > 0, "Prize pool required");
         require(_numWinners > 0 && _numWinners <= 20, "Invalid winners count");
         require(_startTime >= block.timestamp, "Invalid start time");
+        require(_category <= 3, "Invalid category");
         require(
             _submissionDeadline > _startTime,
             "Submission must be after start"
@@ -115,6 +119,7 @@ contract CompetitionFactory {
             sponsor: msg.sender,
             prizePool: msg.value,
             numWinners: _numWinners,
+            category: _category,
             startTime: _startTime,
             submissionDeadline: _submissionDeadline,
             votingDeadline: _votingDeadline,
@@ -130,7 +135,8 @@ contract CompetitionFactory {
             msg.value,
             _judgeMerkleRoot,
             _isPublic,
-            splits
+            splits,
+            _category
         );
         return id;
     }

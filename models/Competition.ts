@@ -15,7 +15,10 @@ export interface ICompetition extends Document {
     judgeMerkleRoot: string;     // bytes32 from contract
     isPublic: boolean;
     sponsorWallet: string;
-    contractCompetitionId: number | null;  // on-chain ID, set after tx confirms
+    contractCompetitionId: number | null;
+    applyDeadline: Date;
+    pptRequired: boolean;
+    category: 'ML' | 'Web3' | 'IoT' | 'Any';
     txHash: string | null;
     status: 'draft' | 'pending_tx' | 'live' | 'voting' | 'completed';
     createdAt: Date;
@@ -44,6 +47,9 @@ const CompetitionSchema = new Schema<ICompetition>(
         isPublic: { type: Boolean, default: true },
         sponsorWallet: { type: String, required: true },
         contractCompetitionId: { type: Number, default: null },
+        applyDeadline: { type: Date, required: true },
+        pptRequired: { type: Boolean, default: false },
+        category: { type: String, enum: ['ML', 'Web3', 'IoT', 'Any'], default: 'Any' },
         txHash: { type: String, default: null },
         status: {
             type: String,
