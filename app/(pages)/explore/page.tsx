@@ -195,10 +195,12 @@ export default function ExplorePage() {
                           <h3 className="text-lg font-bold text-white mb-1 group-hover:text-cyan-300 transition-colors duration-300">
                             {comp.title}
                           </h3>
-                          <span className="text-xs text-gray-400">{comp.venue}</span>
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/20">
-                            {comp.category === 'ML' ? 'ML/AI' : comp.category}
-                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-400 truncate">{comp.venue}</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/20 shrink-0">
+                              {comp.category === 'ML' ? 'ML/AI' : comp.category}
+                            </span>
+                          </div>
                         </div>
                         <span className={`px-2 py-1 text-xs font-semibold rounded border shrink-0 ml-2 ${getStatusBadge(tab)}`}>
                           {getStatusLabel(tab)}

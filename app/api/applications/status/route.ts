@@ -27,7 +27,6 @@ export async function PATCH(req: NextRequest) {
     try {
         await connectDB();
         const { applicationId, action, wallet } = await req.json();
-        // action: 'accepted' | 'rejected'
 
         const application = await Application.findById(applicationId);
         if (!application) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -36,6 +35,16 @@ export async function PATCH(req: NextRequest) {
         if (!competition) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
         if (competition.sponsorWallet !== wallet.toLowerCase())
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+
+        const now = new Date();
+
+        // Cannot accept/reject before apply deadline has passed (competition not started)
+        // and cannot accept/reject after competition has ended (votingDeadline passed)
+        if (now < new Date(competition.applyDeadline))
+            return NextResponse.json({ error: 'Cannot review applications before the apply deadline has passed' }, { status: 400 });
+
+        if (now > new Date(competition.votingDeadline))
+            return NextResponse.json({ error: 'Competition has ended — cannot change application status' }, { status: 400 });
 
         application.status = action;
         await application.save();

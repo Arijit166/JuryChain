@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         const competition = await Competition.create({
             title, description,
             prizePool: String(prizePoolPOL),
-            prizePoolUSD: Number(prizePoolPOL),
+            prizePoolPOL: Number(prizePoolPOL),
             numWinners: Number(numWinners),
             startDate: new Date(startDate),
             applyDeadline: new Date(applyDeadline),

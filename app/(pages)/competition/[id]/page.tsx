@@ -113,7 +113,8 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
 
   const isOrganizer = userInfo?.walletAddress?.toLowerCase() === competition?.sponsorWallet?.toLowerCase();
   const isJudge = competition?.judges.some(j => j.type === 'wallet' && j.value.toLowerCase() === userInfo?.walletAddress?.toLowerCase());
-  const canApply = !isOrganizer && !isJudge && phase === 'submissions';
+  const applyOpen = new Date() < new Date(competition.applyDeadline);
+  const canApply = !isOrganizer && !isJudge && applyOpen;
 
   return (
     <ProtectedRoute>
@@ -246,21 +247,25 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                         {competition.txHash.slice(0, 16)}...{competition.txHash.slice(-8)}
                       </a>
                     )}
-                    {phase === 'submissions' && !isOrganizer && !isJudge && (
+                    {!isOrganizer && !isJudge && (
                       appLoading ? (
                         <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
                       ) : myApplication ? (
                         <div className={`w-full py-2 px-4 rounded-lg text-center text-sm font-semibold border ${myApplication.status === 'accepted' ? 'bg-lime-400/20 border-lime-400/50 text-lime-300' :
-                          myApplication.status === 'rejected' ? 'bg-red-400/20 border-red-400/50 text-red-300' :
-                            'bg-gray-500/20 border-gray-500/50 text-gray-300'
+                            myApplication.status === 'rejected' ? 'bg-red-400/20 border-red-400/50 text-red-300' :
+                              'bg-gray-500/20 border-gray-500/50 text-gray-300'
                           }`}>
                           {myApplication.status === 'accepted' ? '✓ Accepted' :
                             myApplication.status === 'rejected' ? '✗ Rejected' : '⏳ Applied — Pending'}
                         </div>
-                      ) : (
+                      ) : applyOpen ? (
                         <button onClick={() => setShowApply(true)} className="btn-neon-lime w-full text-center block">
                           Apply Now
                         </button>
+                      ) : (
+                        <div className="w-full py-2 px-4 rounded-lg text-center text-sm font-semibold border bg-gray-500/20 border-gray-500/50 text-gray-400">
+                          Applications Closed
+                        </div>
                       )
                     )}
                   </div>
@@ -383,7 +388,7 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
           <ApplyModal
             competitionId={competition._id}
             teamSize={competition.teamSize}
-            pptRequired={false}
+            pptRequired={competition.pptRequired}
             onClose={() => setShowApply(false)}
             onSuccess={() => { setShowApply(false); setMyApplication({ status: 'pending' }); }}
           />

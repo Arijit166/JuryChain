@@ -21,6 +21,7 @@ interface Competition {
     _id: string; title: string; prizePool: string;
     status: string; numWinners: number; applyDeadline: string;
     category: string; startDate: string;
+    votingDeadline: string;
 }
 
 export default function MyCompetitionsPage() {
@@ -68,17 +69,22 @@ export default function MyCompetitionsPage() {
 
     return (
         <ProtectedRoute>
-            <main className="min-h-screen bg-background">
+            <main className="min-h-screen bg-background text-foreground">
                 <Navbar />
-                <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-                    <div className="mb-10">
-                        <h1 className="text-4xl font-bold mb-2">
+
+                {/* Hero */}
+                <section className="py-12 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
+                    <div className="max-w-7xl mx-auto text-center">
+                        <h1 className="text-5xl font-bold mb-2">
                             <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
                                 My Competitions
                             </span>
                         </h1>
-                        <p className="text-gray-400">Competitions you've created and their applicants.</p>
+                        <p className="text-lg text-gray-400">Competitions you've created and their applicants.</p>
                     </div>
+                </section>
+
+                <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
 
                     {loading ? (
                         <div className="flex justify-center py-24">
@@ -149,8 +155,8 @@ export default function MyCompetitionsPage() {
                                                                         <span className="font-semibold text-white">{app.teamName}</span>
                                                                         <span className="text-xs font-mono text-gray-500">Code: {app.teamCode}</span>
                                                                         <span className={`text-xs px-2 py-0.5 rounded-full border ${app.status === 'accepted' ? 'bg-lime-400/20 border-lime-400/50 text-lime-300' :
-                                                                                app.status === 'rejected' ? 'bg-red-400/20 border-red-400/50 text-red-300' :
-                                                                                    'bg-gray-500/20 border-gray-500/50 text-gray-300'
+                                                                            app.status === 'rejected' ? 'bg-red-400/20 border-red-400/50 text-red-300' :
+                                                                                'bg-gray-500/20 border-gray-500/50 text-gray-300'
                                                                             }`}>{app.status}</span>
                                                                         {app.lockedAt && <span className="text-xs text-cyan-400">✓ Submitted</span>}
                                                                     </div>
@@ -174,18 +180,20 @@ export default function MyCompetitionsPage() {
                                                                     )}
                                                                 </div>
                                                                 {/* Accept / Reject */}
-                                                                {app.status === 'pending' && (
-                                                                    <div className="flex gap-2 shrink-0">
-                                                                        <button onClick={() => updateStatus(app._id, comp._id, 'accepted')}
-                                                                            className="flex items-center gap-1 px-3 py-1.5 bg-lime-400/20 border border-lime-400/50 rounded text-lime-300 hover:bg-lime-400/30 text-xs font-semibold transition-colors">
-                                                                            <Check className="w-3 h-3" /> Accept
-                                                                        </button>
-                                                                        <button onClick={() => updateStatus(app._id, comp._id, 'rejected')}
-                                                                            className="flex items-center gap-1 px-3 py-1.5 bg-red-400/20 border border-red-400/50 rounded text-red-300 hover:bg-red-400/30 text-xs font-semibold transition-colors">
-                                                                            <X className="w-3 h-3" /> Reject
-                                                                        </button>
-                                                                    </div>
-                                                                )}
+                                                                {app.status === 'pending' &&
+                                                                    app.lockedAt &&
+                                                                    new Date() < new Date(comp.startDate) && (
+                                                                        <div className="flex gap-2 shrink-0">
+                                                                            <button onClick={() => updateStatus(app._id, comp._id, 'accepted')}
+                                                                                className="flex items-center gap-1 px-3 py-1.5 bg-lime-400/20 border border-lime-400/50 rounded text-lime-300 hover:bg-lime-400/30 text-xs font-semibold transition-colors">
+                                                                                <Check className="w-3 h-3" /> Accept
+                                                                            </button>
+                                                                            <button onClick={() => updateStatus(app._id, comp._id, 'rejected')}
+                                                                                className="flex items-center gap-1 px-3 py-1.5 bg-red-400/20 border border-red-400/50 rounded text-red-300 hover:bg-red-400/30 text-xs font-semibold transition-colors">
+                                                                                <X className="w-3 h-3" /> Reject
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
                                                             </div>
                                                         </div>
                                                     ))}

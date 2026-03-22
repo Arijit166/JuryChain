@@ -69,18 +69,27 @@ export default function CreateCompetitionPage() {
       const submissionTs = Math.floor(new Date(`${formData.submissionDeadlineDate}T${formData.submissionDeadlineTime}`).getTime() / 1000);
       const votingTs = Math.floor(new Date(`${formData.votingDeadlineDate}T${formData.votingDeadlineTime}`).getTime() / 1000);
 
+      const now = new Date();
+      const applyDt = new Date(`${formData.applyDeadlineDate}T${formData.applyDeadlineTime}`);
+      const startDt = new Date(`${formData.startDate}T${formData.startTime}`);
+
+      if (applyDt >= startDt) {
+        alert('Last date to apply must be before the competition start date.');
+        return;
+      }
+
       const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       const prizeInWei = parseEther(formData.prizePool);
       const CATEGORY_MAP: Record<string, number> = { Any: 0, ML: 1, Web3: 2, IoT: 3 };
 
       const tx = await contract.createCompetition(
         Number(formData.winners),
+        CATEGORY_MAP[formData.category],
         startTs,
         submissionTs,
         votingTs,
         judgeMerkleRoot,
         formData.isPublic,
-        CATEGORY_MAP[formData.category],
         { value: prizeInWei }
       );
 
@@ -374,7 +383,7 @@ export default function CreateCompetitionPage() {
                 {/* Category */}
                 <div className="grid sm:grid-cols-2 gap-6 mb-6">
                   <div>
-                    <label className="block text-sm font-semibold text-white mb-2">Category *</label>
+                    <label className="block text-sm font-semibold text-white mb-2 mt-6">Category *</label>
                     <select name="category" value={formData.category} onChange={handleInputChange}
                       className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
                       <option value="Any">Any</option>
