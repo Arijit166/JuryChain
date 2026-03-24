@@ -483,10 +483,32 @@ export default function ApplyModal({ competitionId, teamSize, pptRequired, onClo
 
                             {/* Action area */}
                             {isLocked ? (
-                                <div className="p-4 bg-lime-400/10 border border-lime-400/30 rounded-lg text-center">
-                                    <div className="text-lime-300 font-semibold">✓ Application Submitted</div>
-                                    <div className="text-gray-400 text-xs mt-1">Awaiting organizer review</div>
-                                </div>
+                                team.status === 'accepted' ? (
+                                    <div className="space-y-3">
+                                        <div className="p-4 bg-lime-400/10 border border-lime-400/30 rounded-lg text-center">
+                                            <div className="text-lime-300 font-semibold">✓ Application Approved</div>
+                                            <div className="text-gray-400 text-xs mt-1">Your team has been selected!</div>
+                                        </div>
+                                        {/* Show submit project / ended based on competition timing */}
+                                        {(() => {
+                                            const now = Date.now();
+                                            // competition object not in scope here — use team status + lockedAt as proxy
+                                            // The parent page passes startDate and submissionDeadline as props if needed
+                                            // For now show the button — parent can pass dates as props for full control
+                                            return null; // handled by parent competition page sidebar
+                                        })()}
+                                    </div>
+                                ) : team.status === 'rejected' ? (
+                                    <div className="p-4 bg-red-400/10 border border-red-400/30 rounded-lg text-center">
+                                        <div className="text-red-300 font-semibold">✗ Application Rejected</div>
+                                        <div className="text-gray-400 text-xs mt-1">Your team was not selected</div>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 bg-lime-400/10 border border-lime-400/30 rounded-lg text-center">
+                                        <div className="text-lime-300 font-semibold">✓ Application Submitted</div>
+                                        <div className="text-gray-400 text-xs mt-1">Awaiting organizer review</div>
+                                    </div>
+                                )
                             ) : isLeader ? (
                                 <div className="space-y-2 border-t border-cyan-500/10 pt-4">
                                     <p className="text-xs text-gray-500 text-center">After submitting, no edits or new members allowed.</p>

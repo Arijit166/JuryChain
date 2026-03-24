@@ -69,15 +69,19 @@ export default function SubmitProject({ params }: { params: { competitionId: str
       <main className="min-h-screen bg-background">
         <Navbar />
 
-        <section className="py-16 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
-          <div className="max-w-7xl mx-auto">
-            <h1 className="text-5xl font-bold text-white mb-2">Submit Your Project</h1>
-            <p className="text-xl text-gray-400">Share your innovation with our judges</p>
+        <section className="py-10 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold mb-3">
+              <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                Submit Your Project
+              </span>
+            </h1>
+            <p className="text-base text-gray-400 max-w-2xl mx-auto">Share your innovation with our judges</p>
           </div>
         </section>
 
         <section className="py-16 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="grid lg:grid-cols-3 gap-8">
               {/* Form */}
               <div className="lg:col-span-2">

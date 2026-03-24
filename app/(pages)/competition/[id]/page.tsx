@@ -251,12 +251,45 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                       appLoading ? (
                         <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
                       ) : myApplication ? (
-                        <div className={`w-full py-2 px-4 rounded-lg text-center text-sm font-semibold border ${myApplication.status === 'accepted' ? 'bg-lime-400/20 border-lime-400/50 text-lime-300' :
+                        <div className="space-y-2">
+                          {/* Status badge */}
+                          <div className={`w-full py-2 px-4 rounded-lg text-center text-sm font-semibold border ${myApplication.status === 'accepted' ? 'bg-lime-400/20 border-lime-400/50 text-lime-300' :
                             myApplication.status === 'rejected' ? 'bg-red-400/20 border-red-400/50 text-red-300' :
                               'bg-gray-500/20 border-gray-500/50 text-gray-300'
-                          }`}>
-                          {myApplication.status === 'accepted' ? '✓ Accepted' :
-                            myApplication.status === 'rejected' ? '✗ Rejected' : '⏳ Applied — Pending'}
+                            }`}>
+                            {myApplication.status === 'accepted' ? '✓ Application Approved' :
+                              myApplication.status === 'rejected' ? '✗ Application Rejected' :
+                                myApplication.lockedAt ? '⏳ Submitted — Pending Review' : '⏳ Team Formed — Not Submitted'}
+                          </div>
+
+                          {/* Submit project / ended — only for accepted teams */}
+                          {myApplication.status === 'accepted' && (() => {
+                            const now = Date.now();
+                            const start = new Date(competition.startDate).getTime();
+                            const subDeadline = new Date(competition.submissionDeadline).getTime();
+                            if (now < start) {
+                              return (
+                                <div className="w-full py-2 px-4 rounded-lg text-center text-xs text-gray-400 border border-gray-700">
+                                  Project submission opens on {new Date(competition.startDate).toLocaleDateString()}
+                                </div>
+                              );
+                            }
+                            if (now >= start && now <= subDeadline) {
+                              return (
+                                <Link
+                                  href={`/submit/${competition._id}`}
+                                  className="btn-neon-lime w-full text-center block text-sm py-2"
+                                >
+                                  Submit Project
+                                </Link>
+                              );
+                            }
+                            return (
+                              <div className="w-full py-2 px-4 rounded-lg text-center text-sm font-semibold border bg-gray-500/20 border-gray-500/50 text-gray-400">
+                                Hackathon Ended
+                              </div>
+                            );
+                          })()}
                         </div>
                       ) : applyOpen ? (
                         <button onClick={() => setShowApply(true)} className="btn-neon-lime w-full text-center block">
