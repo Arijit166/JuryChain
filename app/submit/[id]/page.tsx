@@ -203,7 +203,8 @@ export default function SubmitProjectPage() {
         additionalLinks: p.additionalLinks.map((l, idx) => idx === i ? val : l),
     }));
 
-    const inputCls = "w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 text-sm";
+    const inputCls = "w-full px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300";
+    const labelCls = "block text-sm font-semibold text-white mb-2";
 
     // ── State renders ────────────────────────────────────────────────────────
 
@@ -287,20 +288,21 @@ export default function SubmitProjectPage() {
 
     return (
         <ProtectedRoute>
-            <main className="min-h-screen bg-background text-foreground">
+            <main className="min-h-screen bg-background">
                 <Navbar />
 
                 {/* Header */}
                 <section className="py-10 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10">
-                    <div className="max-w-3xl mx-auto">
-                        <div className="flex items-center gap-3 mb-2">
-                            <FileText className="w-6 h-6 text-cyan-400" />
-                            <h1 className="text-2xl font-bold text-white">Submit Project</h1>
-                        </div>
-                        <p className="text-gray-400 text-sm">{competition?.title}</p>
+                    <div className="max-w-4xl mx-auto text-center">
+                        <h1 className="text-4xl sm:text-5xl font-bold mb-3">
+                            <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                                Submit Your Project
+                            </span>
+                        </h1>
+                        <p className="text-base text-gray-400 max-w-2xl mx-auto mb-4">{competition?.title || 'Share your innovation with our judges'}</p>
 
                         {/* Info strip */}
-                        <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-400">
+                        <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-400 justify-center">
                             <span className="flex items-center gap-1.5">
                                 <Users className="w-3.5 h-3.5 text-purple-300" />
                                 {application?.teamName}
@@ -317,182 +319,247 @@ export default function SubmitProjectPage() {
                     </div>
                 </section>
 
-                <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto space-y-6">
+                <section className="py-16 px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="grid lg:grid-cols-3 gap-8">
+                            
+                            {/* Form Column */}
+                            <div className="lg:col-span-2 space-y-6">
 
-                    {/* Countdown + saved status */}
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        {timeLeft && (
-                            <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                                <Clock className="w-4 h-4 text-amber-300" />
-                                <span className="text-amber-300 font-mono font-semibold text-sm">{timeLeft} remaining</span>
-                            </div>
-                        )}
-                        {savedAt && (
-                            <div className="flex items-center gap-2 text-xs text-lime-400">
-                                <CheckCircle className="w-3.5 h-3.5" />
-                                Last saved: {new Date(savedAt).toLocaleString()}
-                            </div>
-                        )}
-                    </div>
-
-                    {error && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">{error}</div>
-                    )}
-
-                    {/* Team members notice */}
-                    <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg text-xs text-cyan-400">
-                        Any member of <span className="font-semibold text-cyan-300">{application?.teamName}</span> can submit or update this project until the deadline.
-                    </div>
-
-                    {/* Form card */}
-                    <div className="glass-card border-cyan-500/20 p-6 space-y-5">
-
-                        {/* Project title */}
-                        <div>
-                            <label className="block text-xs font-semibold text-cyan-300 mb-2">Project Title *</label>
-                            <input
-                                className={inputCls}
-                                placeholder="Give your project a name"
-                                value={form.projectTitle}
-                                onChange={e => setForm(p => ({ ...p, projectTitle: e.target.value }))}
-                            />
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label className="block text-xs font-semibold text-cyan-300 mb-2">Description *</label>
-                            <textarea
-                                className={`${inputCls} min-h-[120px] resize-y`}
-                                placeholder="Describe what you built, the problem it solves, and how it works..."
-                                value={form.description}
-                                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                            />
-                        </div>
-
-                        {/* Repo + Demo */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-semibold text-cyan-300 mb-2 flex items-center gap-1">
-                                    <Github className="w-3 h-3" /> GitHub Repo
-                                </label>
-                                <input
-                                    className={inputCls}
-                                    placeholder="https://github.com/..."
-                                    value={form.repoUrl}
-                                    onChange={e => setForm(p => ({ ...p, repoUrl: e.target.value }))}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-cyan-300 mb-2 flex items-center gap-1">
-                                    <Globe className="w-3 h-3" /> Live Demo / Video
-                                </label>
-                                <input
-                                    className={inputCls}
-                                    placeholder="https://..."
-                                    value={form.demoUrl}
-                                    onChange={e => setForm(p => ({ ...p, demoUrl: e.target.value }))}
-                                />
-                            </div>
-                        </div>
-
-                        {/* File upload (IPFS) */}
-                        <div>
-                            <label className="block text-xs font-semibold text-cyan-300 mb-2 flex items-center gap-1">
-                                <Upload className="w-3 h-3" /> Project File / Presentation (IPFS)
-                            </label>
-                            <div className="space-y-2">
-                                <label className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-cyan-500/30 rounded-lg hover:border-cyan-500/60 cursor-pointer transition-colors bg-black/20">
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        accept=".pdf,.pptx,.ppt,.zip,.png,.jpg,.mp4"
-                                        onChange={e => setFile(e.target.files?.[0] || null)}
-                                    />
-                                    {file ? (
-                                        <span className="text-cyan-300 text-sm font-medium">{file.name}</span>
-                                    ) : (
-                                        <span className="text-gray-500 text-sm">Click to upload (PDF, PPTX, ZIP, max 50MB)</span>
+                                {/* Countdown + saved status */}
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    {timeLeft && (
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                                            <Clock className="w-4 h-4 text-amber-300" />
+                                            <span className="text-amber-300 font-mono font-semibold text-sm">{timeLeft} remaining</span>
+                                        </div>
                                     )}
-                                </label>
-                                {uploading && (
-                                    <div className="flex items-center gap-2 text-xs text-cyan-400">
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading to IPFS...
-                                    </div>
-                                )}
-                                {/* Existing file */}
-                                {(fileUrl || existing?.fileUrl) && !file && (
-                                    <a
-                                        href={fileUrl || existing?.fileUrl || ''}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 text-xs text-lime-400 hover:underline"
-                                    >
-                                        <ExternalLink className="w-3 h-3" />
-                                        {existing?.ipfsHash ? `IPFS: ${existing.ipfsHash.slice(0, 16)}...` : 'View uploaded file'}
-                                    </a>
-                                )}
-                                {/* Manual URL fallback */}
-                                <div>
-                                    <input
-                                        className={inputCls}
-                                        placeholder="Or paste a direct file URL (Google Drive, Slides, etc.)"
-                                        value={fileUrl}
-                                        onChange={e => { setFileUrl(e.target.value); setFile(null); }}
-                                    />
+                                    {savedAt && (
+                                        <div className="flex items-center gap-2 text-xs text-lime-400">
+                                            <CheckCircle className="w-3.5 h-3.5" />
+                                            Last saved: {new Date(savedAt).toLocaleString()}
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* Additional links */}
-                        <div>
-                            <label className="block text-xs font-semibold text-cyan-300 mb-2 flex items-center gap-1">
-                                <Link2 className="w-3 h-3" /> Additional Links
-                            </label>
-                            <div className="space-y-2">
-                                {form.additionalLinks.map((link, i) => (
-                                    <div key={i} className="flex gap-2">
+                                {error && (
+                                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">{error}</div>
+                                )}
+
+                                {/* Team members notice */}
+                                <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg text-xs text-cyan-400">
+                                    Any member of <span className="font-semibold text-cyan-300">{application?.teamName}</span> can submit or update this project until the deadline.
+                                </div>
+
+                                <div className="space-y-6">
+                                    {/* Project title */}
+                                    <div>
+                                        <label className={labelCls}>Project Title *</label>
                                         <input
                                             className={inputCls}
-                                            placeholder="https://..."
-                                            value={link}
-                                            onChange={e => updateLink(i, e.target.value)}
+                                            placeholder="Give your project a name"
+                                            value={form.projectTitle}
+                                            onChange={e => setForm(p => ({ ...p, projectTitle: e.target.value }))}
                                         />
-                                        {form.additionalLinks.length > 1 && (
-                                            <button onClick={() => removeLink(i)} className="p-2 text-gray-500 hover:text-red-400 transition-colors">
-                                                <X className="w-4 h-4" />
+                                    </div>
+
+                                    {/* Description */}
+                                    <div>
+                                        <label className={labelCls}>Project Description *</label>
+                                        <textarea
+                                            className={`${inputCls} min-h-[120px] resize-y`}
+                                            placeholder="Describe what you built, the problem it solves, and how it works..."
+                                            value={form.description}
+                                            onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                                        />
+                                    </div>
+
+                                    {/* Repo */}
+                                    <div>
+                                        <label className={labelCls}>GitHub Repository Link *</label>
+                                        <input
+                                            className={inputCls}
+                                            placeholder="https://github.com/username/project"
+                                            value={form.repoUrl}
+                                            onChange={e => setForm(p => ({ ...p, repoUrl: e.target.value }))}
+                                        />
+                                    </div>
+
+                                    {/* Demo */}
+                                    <div>
+                                        <label className={labelCls}>Demo or Live Link</label>
+                                        <input
+                                            className={inputCls}
+                                            placeholder="https://demo.example.com"
+                                            value={form.demoUrl}
+                                            onChange={e => setForm(p => ({ ...p, demoUrl: e.target.value }))}
+                                        />
+                                    </div>
+
+                                    {/* File upload (IPFS) */}
+                                    <div>
+                                        <label className={labelCls}>Additional Files (Optional)</label>
+                                        <div className="space-y-2">
+                                            <div className="relative border-2 border-dashed border-cyan-500/30 rounded-lg p-8 text-center hover:border-cyan-500/50 transition-colors duration-300 cursor-pointer bg-black/20">
+                                                <Upload className="w-8 h-8 text-cyan-300 mx-auto mb-2" />
+                                                <p className="text-sm text-gray-400 mb-1">Drag and drop files or click to browse</p>
+                                                <p className="text-xs text-gray-500">PDF, ZIP, or image files supported</p>
+                                                <input
+                                                    type="file"
+                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                    accept=".pdf,.pptx,.ppt,.zip,.png,.jpg,.mp4"
+                                                    onChange={e => setFile(e.target.files?.[0] || null)}
+                                                />
+                                            </div>
+                                            {file && (
+                                                <p className="text-cyan-300 text-sm font-medium mt-2">{file.name}</p>
+                                            )}
+                                            {uploading && (
+                                                <div className="flex items-center gap-2 text-xs text-cyan-400 mt-2">
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading to IPFS...
+                                                </div>
+                                            )}
+                                            {/* Existing file */}
+                                            {(fileUrl || existing?.fileUrl) && !file && (
+                                                <div className="mt-2">
+                                                    <a
+                                                        href={fileUrl || existing?.fileUrl || ''}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-2 text-xs text-lime-400 hover:underline"
+                                                    >
+                                                        <ExternalLink className="w-3 h-3" />
+                                                        {existing?.ipfsHash ? `IPFS File: ${existing.ipfsHash.slice(0, 16)}...` : 'View uploaded file'}
+                                                    </a>
+                                                </div>
+                                            )}
+                                            {/* Manual URL fallback */}
+                                            <div className="mt-3">
+                                                <input
+                                                    className={inputCls}
+                                                    placeholder="Or paste a direct file URL (Google Drive, Slides, etc.)"
+                                                    value={fileUrl}
+                                                    onChange={e => { setFileUrl(e.target.value); setFile(null); }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Additional links */}
+                                    <div>
+                                        <label className={labelCls}>Additional Links</label>
+                                        <div className="space-y-2">
+                                            {form.additionalLinks.map((link, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <input
+                                                        className={inputCls}
+                                                        placeholder="https://..."
+                                                        value={link}
+                                                        onChange={e => updateLink(i, e.target.value)}
+                                                    />
+                                                    {form.additionalLinks.length > 1 && (
+                                                        <button onClick={() => removeLink(i)} className="p-2 text-gray-500 hover:text-red-400 transition-colors">
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            <button onClick={addLink} className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-200 transition-colors">
+                                                <Plus className="w-3.5 h-3.5" /> Add another link
                                             </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Submit button */}
+                                    <div className="space-y-2 mt-6">
+                                        <button
+                                            onClick={handleSubmit}
+                                            disabled={saving || uploading || !form.projectTitle.trim() || !form.description.trim()}
+                                            className="btn-neon-cyan w-full py-3 text-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {saving ? (
+                                                <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</>
+                                            ) : existing ? (
+                                                'Update Submission'
+                                            ) : (
+                                                'Submit Project'
+                                            )}
+                                        </button>
+                                        {existing && (
+                                            <p className="text-xs text-gray-500 text-center">
+                                                You can update your submission any time before the deadline.
+                                            </p>
                                         )}
                                     </div>
-                                ))}
-                                <button onClick={addLink} className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-200 transition-colors">
-                                    <Plus className="w-3.5 h-3.5" /> Add another link
-                                </button>
+
+                                </div>
+                            </div>
+
+                            {/* Info Sidebar */}
+                            <div className="space-y-6">
+                                {/* Info Card */}
+                                <div className="glass-card p-6 border-cyan-500/20">
+                                    <h3 className="text-lg font-bold text-white mb-4">Submission Info</h3>
+                                    <div className="space-y-4 text-sm text-gray-400">
+                                        <div className="flex gap-3">
+                                            <CheckCircle className="w-5 h-5 text-lime-300 flex-shrink-0 mt-0.5" />
+                                            <p>Your submission will be stored on IPFS</p>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <CheckCircle className="w-5 h-5 text-lime-300 flex-shrink-0 mt-0.5" />
+                                            <p>Submission hash recorded on blockchain</p>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <CheckCircle className="w-5 h-5 text-lime-300 flex-shrink-0 mt-0.5" />
+                                            <p>Anonymous to judges during voting</p>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <CheckCircle className="w-5 h-5 text-lime-300 flex-shrink-0 mt-0.5" />
+                                            <p>Can edit before deadline</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Requirements */}
+                                <div className="glass-card p-6 border-purple-500/20">
+                                    <h3 className="text-lg font-bold text-white mb-4">Requirements</h3>
+                                    <ul className="space-y-2 text-sm text-gray-400">
+                                        <li className="flex gap-2">
+                                            <span className="text-purple-300">•</span>
+                                            <span>Working prototype or demo</span>
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="text-purple-300">•</span>
+                                            <span>Public GitHub repository</span>
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="text-purple-300">•</span>
+                                            <span>Clear documentation</span>
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="text-purple-300">•</span>
+                                            <span>Team info (max {competition?.teamSize || 5} members)</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                {/* Warning */}
+                                <div className="glass-card p-6 border-orange-500/20 bg-orange-500/5">
+                                    <div className="flex gap-3">
+                                        <AlertTriangle className="w-5 h-5 text-orange-300 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Deadline</h4>
+                                            <p className="text-sm text-gray-400">
+                                                Submissions close on {competition ? new Date(competition.submissionDeadline).toLocaleString() : ''}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
-
-                    {/* Submit button */}
-                    <div className="space-y-2">
-                        <button
-                            onClick={handleSubmit}
-                            disabled={saving || uploading || !form.projectTitle.trim() || !form.description.trim()}
-                            className="w-full btn-neon-cyan py-3 font-semibold text-base disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                            {saving ? (
-                                <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-                            ) : existing ? (
-                                '✏️ Update Submission'
-                            ) : (
-                                '🚀 Submit Project'
-                            )}
-                        </button>
-                        {existing && (
-                            <p className="text-xs text-gray-500 text-center">
-                                You can update your submission any time before the deadline.
-                            </p>
-                        )}
-                    </div>
-                </div>
+                </section>
             </main>
         </ProtectedRoute>
     );
