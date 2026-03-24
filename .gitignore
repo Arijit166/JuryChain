@@ -15,3 +15,4 @@ components.json
 contracts/cache
 contracts/artifacts
 contracts/typechain-types
+tsconfig.tsbuildinfo
