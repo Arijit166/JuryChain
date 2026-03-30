@@ -33,6 +33,7 @@ export default function CreateCompetitionPage() {
   const [judges, setJudges] = useState<Array<{ type: 'wallet' | 'email'; value: string }>>([]);
   const [judgeInput, setJudgeInput] = useState('');
   const [judgeType, setJudgeType] = useState<'wallet' | 'email'>('wallet');
+  const [judgeError, setJudgeError] = useState('');
   const { provider: web3authProvider } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -41,10 +42,26 @@ export default function CreateCompetitionPage() {
   };
 
   const addJudge = () => {
-    if (judgeInput.trim()) {
-      setJudges([...judges, { type: judgeType, value: judgeInput }]);
-      setJudgeInput('');
+    const trimmedInput = judgeInput.trim();
+    if (!trimmedInput) return;
+
+    if (judgeType === 'wallet') {
+      const walletRegex = /^0x[a-fA-F0-9]{40}$/;
+      if (!walletRegex.test(trimmedInput)) {
+        setJudgeError('Invalid wallet address (must be 0x followed by 40 hex characters)');
+        return;
+      }
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedInput)) {
+        setJudgeError('Invalid email address');
+        return;
+      }
     }
+
+    setJudges([...judges, { type: judgeType, value: trimmedInput }]);
+    setJudgeInput('');
+    setJudgeError('');
   };
 
   const removeJudge = (index: number) => {
@@ -425,10 +442,14 @@ export default function CreateCompetitionPage() {
                     <input
                       type={judgeType === 'wallet' ? 'text' : 'email'}
                       value={judgeInput}
-                      onChange={(e) => setJudgeInput(e.target.value)}
                       placeholder={judgeType === 'wallet' ? '0x...' : 'judge@example.com'}
-                      className="flex-1 px-4 py-3 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                      className={`flex-1 px-4 py-3 bg-black/50 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 ${judgeError ? 'border-red-500/50 focus:border-red-500' : 'border-cyan-500/30 focus:border-cyan-500'
+                        }`}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addJudge())}
+                      onChange={(e) => {
+                        setJudgeInput(e.target.value);
+                        if (judgeError) setJudgeError('');
+                      }}
                     />
                     <button
                       type="button"
@@ -438,6 +459,13 @@ export default function CreateCompetitionPage() {
                       <Plus className="w-5 h-5" />
                     </button>
                   </div>
+
+                  {judgeError && (
+                    <div className="text-xs text-red-400 mt-1 mb-4 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {judgeError}
+                    </div>
+                  )}
 
                   {judges.length > 0 && (
                     <div className="space-y-2 mb-4">

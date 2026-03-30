@@ -99,7 +99,7 @@ export function Navbar() {
               {isLoggedIn ? (
                 <div className="flex items-center gap-3">
                   {userInfo?.profileImage && (
-                    <img src={userInfo.profileImage} alt="avatar" className="w-8 h-8 rounded-full border border-cyan-500/50" />
+                    <img src={userInfo.profileImage} alt="avatar" className="w-8 h-8 rounded-full border border-cyan-500/50" referrerPolicy="no-referrer" />
                   )}
                   <span className="text-xs text-gray-400 font-mono">
                     {userInfo?.walletAddress?.slice(0, 6)}...{userInfo?.walletAddress?.slice(-4)}

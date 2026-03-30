@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
         if (!application) return NextResponse.json({ error: 'Invalid team code' }, { status: 404 });
         if (application.lockedAt) return NextResponse.json({ error: 'Team has already submitted — no new members allowed' }, { status: 400 });
         if (application.members.length >= application.maxMembers)
-            return NextResponse.json({ error: 'Team is full' }, { status: 400 });
+            return NextResponse.json({ error: 'Team size full' }, { status: 400 });
 
         const competition = await Competition.findById(application.competitionId);
         if (!competition) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });

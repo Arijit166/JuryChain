@@ -108,6 +108,23 @@ export default function ApplyModal({ competitionId, teamSize, pptRequired, onClo
         return () => clearInterval(interval);
     }, [flow, isLocked, refreshTeam]);
 
+    const validateLinks = () => {
+        const gh = form.githubUrl.trim();
+        const li = form.linkedinUrl.trim();
+        const githubRegex = /^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9._-]+\/?$/;
+        const linkedinRegex = /^(https?:\/\/)?([a-z]+\.)?linkedin\.com\/in\/[a-zA-Z0-9._-]+\/?$/;
+
+        if (!githubRegex.test(gh)) {
+            setError('Invalid GitHub Profile URL (should be like github.com/username)');
+            return false;
+        }
+        if (!linkedinRegex.test(li)) {
+            setError('Invalid LinkedIn Profile URL (should be like linkedin.com/in/username)');
+            return false;
+        }
+        return true;
+    };
+
     const member = {
         name: form.name,
         email: form.email,
@@ -117,6 +134,7 @@ export default function ApplyModal({ competitionId, teamSize, pptRequired, onClo
     };
 
     const handleCreate = async () => {
+        if (!validateLinks()) return;
         setLoading(true); setError('');
         try {
             const res = await fetch('/api/applications/create', {
@@ -136,6 +154,7 @@ export default function ApplyModal({ competitionId, teamSize, pptRequired, onClo
     };
 
     const handleJoin = async () => {
+        if (!validateLinks()) return;
         setLoading(true); setError('');
         try {
             const res = await fetch('/api/applications/join', {
@@ -177,6 +196,7 @@ export default function ApplyModal({ competitionId, teamSize, pptRequired, onClo
 
     // Any member edits their own personal details
     const handleSaveSelfEdit = async () => {
+        if (!validateLinks()) return;
         if (!team) return;
         setLoading(true); setError('');
         try {
@@ -345,8 +365,8 @@ export default function ApplyModal({ competitionId, teamSize, pptRequired, onClo
                     {flow === 'team_ready' && team && (
                         <div className="space-y-5">
 
-                            {/* Team code — only before lock */}
-                            {!isLocked && (
+                            {/* Team code — only before lock and if not already full for solo */}
+                            {!isLocked && (team.maxMembers > 1 || team.members.length < team.maxMembers) && (
                                 <div className="p-4 bg-black/40 border border-cyan-500/20 rounded-lg">
                                     <div className="text-xs text-gray-400 mb-2">Share with teammates to join:</div>
                                     <div className="flex items-center gap-2">
@@ -371,6 +391,11 @@ export default function ApplyModal({ competitionId, teamSize, pptRequired, onClo
                                     <span className="text-sm font-semibold text-white">
                                         Members ({team.members.length}/{team.maxMembers})
                                     </span>
+                                    {team.members.length >= team.maxMembers && (
+                                        <span className="text-xs font-bold text-red-400 bg-red-400/10 border border-red-400/30 px-2 py-0.5 rounded-full">
+                                            Team size full
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     {team.members.map((m, idx) => (
@@ -455,7 +480,7 @@ export default function ApplyModal({ competitionId, teamSize, pptRequired, onClo
                                     <button onClick={() => setIsEditingTeam(!isEditingTeam)}
                                         className="flex items-center gap-2 text-xs text-cyan-300 hover:text-cyan-100 mb-3">
                                         <Pencil className="w-3 h-3" />
-                                        {isEditingTeam ? 'Cancel' : 'Edit team name / PPT'}
+                                        {isEditingTeam ? 'Cancel' : (pptRequired ? 'Edit team name / PPT' : 'Edit team name')}
                                     </button>
                                     {isEditingTeam && (
                                         <div className="space-y-2">
