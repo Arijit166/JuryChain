@@ -7,11 +7,14 @@ import { Submission } from '@/models/Submission';
 export async function POST(req: NextRequest) {
     await connectDB();
 
-    const { competitionId, submissionId, nullifierHash, score, judgeWallet, judgeEmail } =
+    const { competitionId, submissionId, nullifierHash, commitmentKey, score, judgeWallet, judgeEmail } =
         await req.json();
 
     if (!competitionId || !submissionId || !nullifierHash || !score || (!judgeWallet && !judgeEmail)) {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    if (!commitmentKey) {
+        return NextResponse.json({ error: 'Missing commitmentKey' }, { status: 400 });
     }
     if (typeof score !== 'number' || score < 1 || score > 10) {
         return NextResponse.json({ error: 'Score must be between 1 and 10' }, { status: 400 });
@@ -48,6 +51,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Submission not found in this competition' }, { status: 404 });
     }
 
+    const existingCommitment = await Vote.findOne({
+        competitionId,
+        $or: [
+            ...(judgeWallet ? [{ judgeWallet: judgeWallet.toLowerCase() }] : []),
+            ...(judgeEmail ? [{ judgeEmail: judgeEmail.toLowerCase() }] : []),
+        ],
+    });
+    if (existingCommitment && existingCommitment.commitmentKey !== commitmentKey) {
+        return NextResponse.json(
+            { error: 'Secret mismatch — use the same secret phrase you used before' },
+            { status: 409 }
+        );
+    }
+
     // Nullifier check — prevents double voting
     const existing = await Vote.findOne({ nullifierHash });
     if (existing) {
@@ -58,7 +75,10 @@ export async function POST(req: NextRequest) {
         competitionId,
         submissionId,
         nullifierHash,
+        commitmentKey,
         score,
+        ...(judgeWallet ? { judgeWallet: judgeWallet.toLowerCase() } : {}),
+        ...(judgeEmail ? { judgeEmail: judgeEmail.toLowerCase() } : {}),
     });
 
     return NextResponse.json({ success: true, voteId: vote._id });

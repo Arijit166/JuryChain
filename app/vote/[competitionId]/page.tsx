@@ -26,21 +26,37 @@ interface Competition {
     judges: Array<{ type: string; value: string }>;
 }
 
-// Derive a nullifier hash from Semaphore identity + competitionId
+
 // Uses the identity's nullifier field scoped to this competition
 async function deriveNullifier(
+    identity: Identity,
+    competitionId: string,
+    submissionId: string   // <-- scoped per project
+): Promise<string> {
+    const { poseidon2 } = await import('poseidon-lite');
+    // Combine competitionId + submissionId so each project gets its own nullifier
+    // but the same wallet+secret always produces the same result for the same project
+    const combined = `${competitionId}:${submissionId}`;
+    const encoded = new TextEncoder().encode(combined);
+    let hex = '';
+    encoded.forEach((b) => (hex += b.toString(16).padStart(2, '0')));
+    const externalNullifier = BigInt('0x' + hex.slice(0, 62));
+    const nullifierBig = poseidon2([identity.secretScalar, externalNullifier]);
+    return nullifierBig.toString();
+}
+
+// Also add this helper — derives a stable commitment fingerprint
+// used to lock a judge's secret key for this competition
+async function deriveCommitmentKey(
     identity: Identity,
     competitionId: string
 ): Promise<string> {
     const { poseidon2 } = await import('poseidon-lite');
-    // Convert competitionId string to a stable BigInt
-    const encoded = new TextEncoder().encode(competitionId);
+    const encoded = new TextEncoder().encode(`commitment:${competitionId}`);
     let hex = '';
     encoded.forEach((b) => (hex += b.toString(16).padStart(2, '0')));
-    // Truncate to 31 bytes to stay within field size
-    const externalNullifier = BigInt('0x' + hex.slice(0, 62));
-    const nullifierBig = poseidon2([identity.secretScalar, externalNullifier]);
-    return nullifierBig.toString();
+    const ext = BigInt('0x' + hex.slice(0, 62));
+    return poseidon2([identity.commitment, ext]).toString();
 }
 
 export default function VotePage({
@@ -63,6 +79,9 @@ export default function VotePage({
     const [identityReady, setIdentityReady] = useState(false);
     const [identityLoading, setIdentityLoading] = useState(false);
     const [alreadyVoted, setAlreadyVoted] = useState(false);
+    const [votedSubmissionIds, setVotedSubmissionIds] = useState<Set<string>>(new Set());
+    const [commitmentLocked, setCommitmentLocked] = useState(false);
+    const [commitmentMismatch, setCommitmentMismatch] = useState(false);
 
     // ── voting ────────────────────────────────────────────────────────────────
     const [scores, setScores] = useState<Record<string, number>>({});
@@ -95,22 +114,48 @@ export default function VotePage({
 
     // ── generate identity ─────────────────────────────────────────────────────
     const generateIdentity = useCallback(async () => {
-        if (!userInfo?.walletAddress || !secret.trim()) return;
+        if (!secret.trim()) return;
+        if (!userInfo?.walletAddress && !userInfo?.email) return;
         setIdentityLoading(true);
         try {
-            // Semaphore Identity is deterministically derived — same wallet+secret
-            // always produces the same identity (commitment, nullifier, trapdoor)
-            const trapdoor = `${userInfo.walletAddress.toLowerCase()}::${secret}`;
+            const identifier = userInfo?.walletAddress
+                ? userInfo.walletAddress.toLowerCase()
+                : userInfo!.email!.toLowerCase();
+            const trapdoor = `${identifier}::${secret}`;
             const id = new Identity(trapdoor);
             setIdentity(id);
 
-            // Check if this identity has already voted in this competition
-            const nullifierHash = await deriveNullifier(id, competitionId);
-            const res = await fetch(
-                `/api/votes/my-vote?nullifierHash=${nullifierHash}&competitionId=${competitionId}`
+            // Derive the competition-scoped commitment key
+            const commitKey = await deriveCommitmentKey(id, competitionId);
+
+            // Check server: has this judge registered a commitment key before?
+            const lockRes = await fetch(
+                `/api/votes/check-commitment?competitionId=${competitionId}&judgeWallet=${userInfo?.walletAddress ?? ''}&judgeEmail=${userInfo?.email ?? ''}`
             );
-            const data = await res.json();
-            setAlreadyVoted(data.voted);
+            const lockData = await lockRes.json();
+
+            if (lockData.commitmentKey) {
+                // Judge has voted before — verify they're using the SAME secret
+                if (lockData.commitmentKey !== commitKey) {
+                    setCommitmentMismatch(true);
+                    setIdentityReady(false);
+                    setIdentityLoading(false);
+                    return;
+                }
+            }
+            setCommitmentMismatch(false);
+            setCommitmentLocked(!!lockData.commitmentKey);
+
+            // Load which submissions this identity has already voted on
+            const alreadyRes = await fetch(
+                `/api/votes/my-votes?competitionId=${competitionId}&judgeWallet=${userInfo?.walletAddress ?? ''}&judgeEmail=${userInfo?.email ?? ''}`
+            );
+            const alreadyData = await alreadyRes.json();
+            setVotedSubmissionIds(new Set<string>(alreadyData.votedSubmissionIds ?? []));
+            if (alreadyData.voteScores) {
+                setScores((prev) => ({ ...prev, ...alreadyData.voteScores }));
+            }
+            setAlreadyVoted(false); // don't block — let them score remaining projects
             setIdentityReady(true);
         } catch (e) {
             console.error(e);
@@ -118,18 +163,21 @@ export default function VotePage({
         } finally {
             setIdentityLoading(false);
         }
-    }, [userInfo?.walletAddress, secret, competitionId]);
+    }, [userInfo, secret, competitionId]);
 
     // ── submit a single vote ──────────────────────────────────────────────────
     const submitVote = useCallback(
         async (submissionId: string) => {
-            if (!identity || !userInfo?.walletAddress) return;
+            if (!identity || (!userInfo?.walletAddress && !userInfo?.email)) return;
             const score = scores[submissionId];
             if (!score) { alert('Please select a score first'); return; }
 
             setSubmitting(submissionId);
             try {
-                const nullifierHash = await deriveNullifier(identity, competitionId);
+                // Per-project nullifier — same identity can't vote twice on same project
+                const nullifierHash = await deriveNullifier(identity, competitionId, submissionId);
+                // Competition-scoped commitment key — locks this judge to this secret
+                const commitmentKey = await deriveCommitmentKey(identity, competitionId);
 
                 const res = await fetch('/api/votes/commit', {
                     method: 'POST',
@@ -138,9 +186,10 @@ export default function VotePage({
                         competitionId,
                         submissionId,
                         nullifierHash,
+                        commitmentKey,
                         score,
-                        judgeWallet: userInfo.walletAddress,
-                        judgeEmail: userInfo.email,
+                        judgeWallet: userInfo?.walletAddress,
+                        judgeEmail: userInfo?.email,
                     }),
                 });
 
@@ -148,8 +197,8 @@ export default function VotePage({
                 if (!res.ok) throw new Error(data.error ?? 'Vote submission failed');
 
                 setVoteStatus((prev) => ({ ...prev, [submissionId]: 'voted' }));
-                // After voting for one project, nullifier is consumed for this competition
-                setAlreadyVoted(true);
+                setVotedSubmissionIds((prev) => new Set([...prev, submissionId]));
+                // Do NOT set alreadyVoted true — let them continue scoring other projects
             } catch (e: any) {
                 setVoteStatus((prev) => ({
                     ...prev,
@@ -159,7 +208,7 @@ export default function VotePage({
                 setSubmitting(null);
             }
         },
-        [identity, userInfo?.walletAddress, scores, competitionId]
+        [identity, userInfo, scores, competitionId]
     );
 
     // ── derived state ──────────────────────────────────────────────────────────
@@ -182,6 +231,11 @@ export default function VotePage({
         );
 
     const hasAnyVoteSubmitted = Object.values(voteStatus).includes('voted');
+    const allVotesSubmitted =
+        submissions.length > 0 &&
+        submissions.every(
+            (s) => voteStatus[s._id] === 'voted' || votedSubmissionIds.has(s._id)
+        );
 
     // ── render ─────────────────────────────────────────────────────────────────
     if (loading) {
@@ -260,6 +314,29 @@ export default function VotePage({
                                 >
                                     Back to Competition
                                 </Link>
+                            </div>
+                        )}
+
+                        {/* ── Wrong secret ── */}
+                        {commitmentMismatch && (
+                            <div className="glass-card p-8 border-red-500/20 bg-red-500/5 text-center">
+                                <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+                                <p className="text-red-300 font-semibold text-lg">Wrong Secret Phrase</p>
+                                <p className="text-gray-400 text-sm mt-1 max-w-md mx-auto">
+                                    You have already voted in this competition using a different secret phrase.
+                                    Re-enter the same secret you used before to continue scoring remaining projects.
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        setCommitmentMismatch(false);
+                                        setIdentityReady(false);
+                                        setSecret('');
+                                        setIdentity(null);
+                                    }}
+                                    className="btn-ghost-neon inline-block mt-4 px-6 py-2 text-sm"
+                                >
+                                    Try Again
+                                </button>
                             </div>
                         )}
 
@@ -386,17 +463,22 @@ export default function VotePage({
                                     </div>
                                 )}
 
-                                {/* ── Already voted banner ── */}
-                                {identityReady && alreadyVoted && !hasAnyVoteSubmitted && (
-                                    <div className="glass-card p-8 border-yellow-500/20 bg-yellow-500/5 text-center">
-                                        <AlertCircle className="w-10 h-10 text-yellow-400 mx-auto mb-3" />
-                                        <p className="text-yellow-300 font-semibold text-lg">
-                                            You have already voted in this competition
+                                {/* ── Already voted all projects banner ── */}
+                                {identityReady && allVotesSubmitted && (
+                                    <div className="glass-card p-8 border-lime-400/20 bg-lime-400/5 text-center">
+                                        <CheckCircle className="w-10 h-10 text-lime-400 mx-auto mb-3" />
+                                        <p className="text-lime-300 font-semibold text-lg">
+                                            All projects scored!
                                         </p>
                                         <p className="text-gray-400 text-sm mt-1">
-                                            This identity's nullifier is already on record. Each
-                                            Semaphore identity can only cast one vote per competition.
+                                            You have submitted scores for every submission in this competition.
                                         </p>
+                                        <Link
+                                            href={`/competition/${competitionId}`}
+                                            className="btn-ghost-neon inline-block mt-4 px-6 py-2 text-sm"
+                                        >
+                                            Back to Competition
+                                        </Link>
                                     </div>
                                 )}
 
@@ -449,7 +531,7 @@ export default function VotePage({
 
                                         {submissions.map((sub) => {
                                             const status = voteStatus[sub._id];
-                                            const isVoted = status === 'voted';
+                                            const isVoted = status === 'voted' || votedSubmissionIds.has(sub._id);
                                             const isError = status?.startsWith('error:');
                                             const errorMsg = isError
                                                 ? status.replace('error:', '')
@@ -596,22 +678,11 @@ export default function VotePage({
                                 )}
 
                                 {/* ── Post-vote message ── */}
-                                {identityReady && hasAnyVoteSubmitted && (
-                                    <div className="glass-card p-6 border-lime-400/20 bg-lime-400/5 text-center">
-                                        <CheckCircle className="w-8 h-8 text-lime-300 mx-auto mb-2" />
-                                        <p className="text-lime-300 font-semibold">
-                                            Your vote has been recorded anonymously
+                                {identityReady && hasAnyVoteSubmitted && !allVotesSubmitted && (
+                                    <div className="glass-card p-4 border-cyan-500/20 bg-cyan-500/5 text-center">
+                                        <p className="text-cyan-300 text-sm">
+                                            ✓ Votes recorded anonymously. Score the remaining projects above.
                                         </p>
-                                        <p className="text-xs text-gray-400 mt-1">
-                                            Nullifier committed. You cannot vote again with this
-                                            identity in this competition.
-                                        </p>
-                                        <Link
-                                            href={`/competition/${competitionId}`}
-                                            className="btn-ghost-neon inline-block mt-4 px-6 py-2 text-sm"
-                                        >
-                                            Back to Competition
-                                        </Link>
                                     </div>
                                 )}
                             </>
