@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Calendar, Users, Trophy, Lock, Clock, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useRouter } from 'next/navigation';
 
 interface Competition {
   _id: string;
@@ -113,6 +114,11 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
 
   const isOrganizer = userInfo?.walletAddress?.toLowerCase() === competition?.sponsorWallet?.toLowerCase();
   const isJudge = competition?.judges.some(j => j.type === 'wallet' && j.value.toLowerCase() === userInfo?.walletAddress?.toLowerCase());
+  const router = useRouter();
+  const now = new Date();
+  const votingOpen =
+    now >= new Date(competition.submissionDeadline) &&
+    now <= new Date(competition.votingDeadline);
   const applyOpen = new Date() < new Date(competition.applyDeadline);
   const canApply = !isOrganizer && !isJudge && applyOpen;
 
@@ -346,10 +352,18 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                         </div>
                       ))}
                     </div>
-                    {phase === 'voting' && (
-                      <Link href={`/judge-dashboard?competition=${competition._id}`} className="btn-ghost-neon w-full text-center text-sm py-2 block mt-4">
-                        Judge This
-                      </Link>
+                    {isJudge && votingOpen && (
+                      <button
+                        onClick={() => router.push(`/vote/${competition._id}`)}
+                        className="btn-neon-purple w-full text-center text-sm py-2 mt-4 flex items-center justify-center gap-2"
+                      >
+                        🗳️ Vote Now
+                      </button>
+                    )}
+                    {isJudge && !votingOpen && phase === 'ended' && (
+                      <div className="w-full py-2 px-4 rounded-lg text-center text-sm font-semibold border bg-gray-500/20 border-gray-500/50 text-gray-400 mt-4">
+                        Voting Ended
+                      </div>
                     )}
                   </div>
                 </div>
