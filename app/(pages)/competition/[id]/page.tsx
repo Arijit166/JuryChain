@@ -113,7 +113,10 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
   }[phase];
 
   const isOrganizer = userInfo?.walletAddress?.toLowerCase() === competition?.sponsorWallet?.toLowerCase();
-  const isJudge = competition?.judges.some(j => j.type === 'wallet' && j.value.toLowerCase() === userInfo?.walletAddress?.toLowerCase());
+  const isJudge = competition?.judges.some(j =>
+    (j.type === 'wallet' && j.value.toLowerCase() === userInfo?.walletAddress?.toLowerCase()) ||
+    (j.type === 'email' && !!userInfo?.email && j.value.toLowerCase() === userInfo.email.toLowerCase())
+  );
   const router = useRouter();
   const now = new Date();
   const votingOpen =

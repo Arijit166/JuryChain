@@ -7,10 +7,10 @@ import { Submission } from '@/models/Submission';
 export async function POST(req: NextRequest) {
     await connectDB();
 
-    const { competitionId, submissionId, nullifierHash, score, judgeWallet } =
+    const { competitionId, submissionId, nullifierHash, score, judgeWallet, judgeEmail } =
         await req.json();
 
-    if (!competitionId || !submissionId || !nullifierHash || !score || !judgeWallet) {
+    if (!competitionId || !submissionId || !nullifierHash || !score || (!judgeWallet && !judgeEmail)) {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     if (typeof score !== 'number' || score < 1 || score > 10) {
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
     // Verify judge is in the approved judges array
     const isJudge = comp.judges.some(
         (j: { type: string; value: string }) =>
-            j.type === 'wallet' &&
-            j.value.toLowerCase() === judgeWallet.toLowerCase()
+            (j.type === 'wallet' && judgeWallet && j.value.toLowerCase() === judgeWallet.toLowerCase()) ||
+            (j.type === 'email' && judgeEmail && j.value.toLowerCase() === judgeEmail.toLowerCase())
     );
     if (!isJudge) {
         return NextResponse.json({ error: 'Not an approved judge for this competition' }, { status: 403 });

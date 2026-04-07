@@ -72,9 +72,15 @@ export default function VotePage({
 
     // ── load data ─────────────────────────────────────────────────────────────
     useEffect(() => {
+        const wallet = userInfo?.walletAddress ?? '';
+        const email = userInfo?.email ?? '';
+        const subParams = new URLSearchParams({ competitionId });
+        if (wallet) subParams.set('wallet', wallet);
+        if (email) subParams.set('email', email);
+
         Promise.all([
             fetch(`/api/competitions/${competitionId}`).then((r) => r.json()),
-            fetch(`/api/submissions?competitionId=${competitionId}`).then((r) =>
+            fetch(`/api/submissions/list?${subParams.toString()}`).then((r) =>
                 r.json()
             ),
         ])
@@ -85,7 +91,7 @@ export default function VotePage({
             })
             .catch(() => setError('Failed to load competition data'))
             .finally(() => setLoading(false));
-    }, [competitionId]);
+    }, [competitionId, userInfo]);
 
     // ── generate identity ─────────────────────────────────────────────────────
     const generateIdentity = useCallback(async () => {
@@ -134,6 +140,7 @@ export default function VotePage({
                         nullifierHash,
                         score,
                         judgeWallet: userInfo.walletAddress,
+                        judgeEmail: userInfo.email,
                     }),
                 });
 
@@ -163,12 +170,15 @@ export default function VotePage({
         now <= new Date(competition.votingDeadline);
 
     const isJudge =
-        !!userInfo?.walletAddress &&
         !!competition &&
         competition.judges.some(
             (j) =>
-                j.type === 'wallet' &&
-                j.value.toLowerCase() === userInfo.walletAddress!.toLowerCase()
+                (j.type === 'wallet' &&
+                    !!userInfo?.walletAddress &&
+                    j.value.toLowerCase() === userInfo.walletAddress.toLowerCase()) ||
+                (j.type === 'email' &&
+                    !!userInfo?.email &&
+                    j.value.toLowerCase() === userInfo.email.toLowerCase())
         );
 
     const hasAnyVoteSubmitted = Object.values(voteStatus).includes('voted');
@@ -201,20 +211,20 @@ export default function VotePage({
 
                 {/* ── Hero ── */}
                 <section className="py-10 px-4 sm:px-6 lg:px-8 border-b border-cyan-500/10 bg-gradient-to-b from-purple-950/20 to-transparent">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="flex items-center gap-2 mb-3">
+                    <div className="max-w-4xl mx-auto text-center">
+                        <div className="flex items-center justify-center gap-2 mb-3">
                             <Shield className="w-5 h-5 text-purple-300" />
                             <span className="text-sm text-purple-300 font-semibold uppercase tracking-wider">
                                 Judge Portal
                             </span>
                         </div>
-                        <h1 className="text-4xl font-bold text-white mb-2">
+                        <h1 className="text-4xl sm:text-5xl font-bold mb-3">
                             <span className="bg-gradient-to-r from-purple-300 to-cyan-300 bg-clip-text text-transparent">
                                 Anonymous Voting
                             </span>
                         </h1>
-                        <p className="text-gray-400 text-sm">{competition.title}</p>
-                        <div className="mt-3 flex gap-4 text-xs text-gray-500">
+                        <p className="text-base text-gray-400 max-w-2xl mx-auto">{competition.title}</p>
+                        <div className="mt-3 flex justify-center gap-4 text-xs text-gray-500">
                             <span>
                                 Voting opens:{' '}
                                 <span className="text-gray-300">
