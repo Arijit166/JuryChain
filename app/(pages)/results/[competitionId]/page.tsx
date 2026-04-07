@@ -2,6 +2,7 @@
 
 import { Navbar } from '@/components/layout/navbar';
 import { Trophy, ExternalLink, CheckCircle, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react'
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -15,32 +16,32 @@ interface Winner {
 }
 
 export default function Results({ params }: { params: { competitionId: string } }) {
-  const winners: Winner[] = [
-    {
-      rank: 1,
-      projectName: 'Decentralized AI Protocol',
-      teamAddress: '0xABCD...EF12',
-      votes: 118,
-      prizeAmount: 250000,
-      prizeStatus: 'released',
-    },
-    {
-      rank: 2,
-      projectName: 'Cross-chain Bridge',
-      teamAddress: '0x1234...5678',
-      votes: 105,
-      prizeAmount: 150000,
-      prizeStatus: 'released',
-    },
-    {
-      rank: 3,
-      projectName: 'Privacy-Focused Social Graph',
-      teamAddress: '0x9876...5432',
-      votes: 98,
-      prizeAmount: 100000,
-      prizeStatus: 'released',
-    },
-  ];
+  const [realResults, setRealResults] = useState<any[]>([]);
+  const [totalVotesCast, setTotalVotesCast] = useState(0);
+  const [resultsLoading, setResultsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/votes/results/${params.competitionId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.results) {
+          setRealResults(data.results);
+          setTotalVotesCast(data.totalVotesCast ?? 0);
+        }
+      })
+      .finally(() => setResultsLoading(false));
+  }, [params.competitionId]);
+
+  const winners: Winner[] = realResults.slice(0, 3).map((r, idx) => ({
+    rank: idx + 1,
+    projectName: r.projectTitle,
+    teamAddress: r.submittedBy
+      ? `${r.submittedBy.slice(0, 6)}…${r.submittedBy.slice(-4)}`
+      : r.teamName,
+    votes: r.voteCount,
+    prizeAmount: 0,
+    prizeStatus: 'pending' as const,
+  }));
 
   return (
     <ProtectedRoute>

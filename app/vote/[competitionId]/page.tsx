@@ -32,14 +32,14 @@ async function deriveNullifier(
     identity: Identity,
     competitionId: string
 ): Promise<string> {
-    const { poseidon2 } = await import('@zk-kit/poseidon-cipher');
+    const { poseidon2 } = await import('poseidon-lite');
     // Convert competitionId string to a stable BigInt
     const encoded = new TextEncoder().encode(competitionId);
     let hex = '';
     encoded.forEach((b) => (hex += b.toString(16).padStart(2, '0')));
     // Truncate to 31 bytes to stay within field size
     const externalNullifier = BigInt('0x' + hex.slice(0, 62));
-    const nullifierBig = poseidon2([identity.nullifier, externalNullifier]);
+    const nullifierBig = poseidon2([identity.secretScalar, externalNullifier]);
     return nullifierBig.toString();
 }
 
