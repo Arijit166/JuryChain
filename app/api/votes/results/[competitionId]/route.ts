@@ -7,10 +7,10 @@ import mongoose from 'mongoose';
 
 export async function GET(
     _req: NextRequest,
-    { params }: { params: { competitionId: string } }
+    context: { params: Promise<{ competitionId: string }> }
 ) {
     await connectDB();
-    const { competitionId } = params;
+    const { competitionId } = await context.params;
 
     const comp = await Competition.findById(competitionId);
     if (!comp) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
@@ -68,5 +68,12 @@ export async function GET(
         totalVotesCast,
         totalJudges: comp.judges.length,
         totalSubmissions: submissionIds.length,
+        prizePool: comp.prizePool,
+        prizePoolPOL: comp.prizePoolPOL,
+        numWinners: comp.numWinners,
+        competitionTitle: comp.title,
+        votingDeadline: comp.votingDeadline,
+        sponsorWallet: comp.sponsorWallet,
+        txHash: comp.txHash,
     });
 }

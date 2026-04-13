@@ -256,7 +256,17 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                         {competition.txHash.slice(0, 16)}...{competition.txHash.slice(-8)}
                       </a>
                     )}
-                    {!isOrganizer && !isJudge && (
+                    {/* View Results — always shown for everyone when voting ended */}
+                    {phase === 'ended' && (
+                      <Link
+                        href={`/results/${competition._id}`}
+                        className="btn-neon-lime w-full text-center block text-sm py-2 font-bold"
+                      >
+                        🏆 View Results
+                      </Link>
+                    )}
+
+                    {!isOrganizer && !isJudge && phase !== 'ended' && (
                       appLoading ? (
                         <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
                       ) : myApplication ? (
@@ -362,11 +372,6 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                       >
                         🗳️ Vote Now
                       </button>
-                    )}
-                    {isJudge && !votingOpen && phase === 'ended' && (
-                      <div className="w-full py-2 px-4 rounded-lg text-center text-sm font-semibold border bg-gray-500/20 border-gray-500/50 text-gray-400 mt-4">
-                        Voting Ended
-                      </div>
                     )}
                   </div>
                 </div>

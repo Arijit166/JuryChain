@@ -185,7 +185,7 @@ export default function ExplorePage() {
                   return (
                     <Link
                       key={comp._id}
-                      href={`/competition/${comp._id}`}
+                      href={tab === 'past' ? `/results/${comp._id}` : `/competition/${comp._id}`}
                       className="glass-card p-6 border-cyan-500/20 group hover:border-cyan-500/50 cursor-pointer transition-all duration-300 animate-float-up"
                       style={{ animationDelay: `${(index % 3) * 100}ms` }}
                     >
@@ -238,8 +238,12 @@ export default function ExplorePage() {
                         </div>
                       </div>
 
-                      <button className="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-semibold rounded-lg group-hover:shadow-lg group-hover:shadow-cyan-500/30 transition-all duration-300">
-                        View Details
+                      <button className={`w-full py-2 px-4 font-semibold rounded-lg group-hover:shadow-lg transition-all duration-300 ${
+                        tab === 'past'
+                          ? 'bg-gradient-to-r from-lime-400 to-cyan-400 text-black group-hover:shadow-lime-500/30'
+                          : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-black group-hover:shadow-cyan-500/30'
+                      }`}>
+                        {tab === 'past' ? '🏆 View Results' : 'View Details'}
                       </button>
                     </Link>
                   );
