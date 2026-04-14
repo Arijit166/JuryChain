@@ -158,6 +158,38 @@ export default function SubmitProjectPage() {
             setError('Project title and description are required.');
             return;
         }
+
+        if (!form.repoUrl.trim()) {
+            setError('GitHub Repository Link is required.');
+            return;
+        }
+
+        const isValidUrl = (urlString: string) => {
+            try {
+                return Boolean(new URL(urlString));
+            } catch (e) {
+                return false;
+            }
+        };
+
+        if (!isValidUrl(form.repoUrl) || !form.repoUrl.toLowerCase().includes('github.com')) {
+            setError('Please provide a valid GitHub Repository URL.');
+            return;
+        }
+
+        if (form.demoUrl.trim() && !isValidUrl(form.demoUrl)) {
+            setError('Please provide a valid Demo URL.');
+            return;
+        }
+
+        const validAdditionalLinks = form.additionalLinks.filter((l: string) => l.trim());
+        for (const link of validAdditionalLinks) {
+            if (!isValidUrl(link)) {
+                setError(`Invalid URL in additional links: ${link}`);
+                return;
+            }
+        }
+
         setSaving(true);
         try {
             let ipfsHash = existing?.ipfsHash || null;
@@ -474,7 +506,7 @@ export default function SubmitProjectPage() {
                                     <div className="space-y-2 mt-6">
                                         <button
                                             onClick={handleSubmit}
-                                            disabled={saving || uploading || !form.projectTitle.trim() || !form.description.trim()}
+                                            disabled={saving || uploading || !form.projectTitle.trim() || !form.description.trim() || !form.repoUrl.trim()}
                                             className="btn-neon-cyan w-full py-3 text-lg disabled:opacity-50 flex items-center justify-center gap-2"
                                         >
                                             {saving ? (

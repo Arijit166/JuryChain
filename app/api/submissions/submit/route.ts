@@ -9,8 +9,32 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { competitionId, walletAddress, projectTitle, description, repoUrl, demoUrl, ipfsHash, fileUrl, additionalLinks } = body;
 
-    if (!competitionId || !walletAddress || !projectTitle || !description) {
+    if (!competitionId || !walletAddress || !projectTitle || !description || !repoUrl) {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const isValidUrl = (urlString: string) => {
+        try {
+            return Boolean(new URL(urlString));
+        } catch (e) {
+            return false;
+        }
+    };
+
+    if (!isValidUrl(repoUrl) || !String(repoUrl).toLowerCase().includes('github.com')) {
+        return NextResponse.json({ error: 'Please provide a valid GitHub Repository URL.' }, { status: 400 });
+    }
+
+    if (demoUrl && !isValidUrl(demoUrl)) {
+        return NextResponse.json({ error: 'Please provide a valid Demo URL.' }, { status: 400 });
+    }
+
+    if (additionalLinks && Array.isArray(additionalLinks)) {
+        for (const link of additionalLinks) {
+            if (link && !isValidUrl(link)) {
+                return NextResponse.json({ error: `Invalid URL in additional links: ${link}` }, { status: 400 });
+            }
+        }
     }
 
     // Verify competition exists and submission window is open
