@@ -278,7 +278,7 @@ export default function CompetitionDetails({ params }: { params: Promise<{ id: s
                             }`}>
                             {myApplication.status === 'accepted' ? '✓ Application Approved' :
                               myApplication.status === 'rejected' ? '✗ Application Rejected' :
-                                myApplication.lockedAt ? '⏳ Submitted — Pending Review' : '⏳ Team Formed — Not Submitted'}
+                                '⏳ Application Pending'}
                           </div>
 
                           {/* Submit project / ended — only for accepted teams */}

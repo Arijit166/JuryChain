@@ -59,6 +59,12 @@ export default function CreateCompetitionPage() {
       }
     }
 
+    const isDuplicate = judges.some(j => j.value.toLowerCase() === trimmedInput.toLowerCase());
+    if (isDuplicate) {
+      setJudgeError(`This ${judgeType} has already been added as a judge`);
+      return;
+    }
+
     setJudges([...judges, { type: judgeType, value: trimmedInput }]);
     setJudgeInput('');
     setJudgeError('');
