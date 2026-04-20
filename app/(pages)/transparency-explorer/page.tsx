@@ -1,88 +1,71 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/navbar';
-import { Search, Filter, Eye, Copy, CheckCircle } from 'lucide-react';
+import { Search, Filter, Eye, Copy, CheckCircle, Loader2, XCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
+type RecordType = 'competition' | 'vote' | 'proof' | 'transaction';
+
 interface TransparencyRecord {
   id: string;
-  type: 'competition' | 'vote' | 'proof' | 'transaction';
+  type: RecordType;
   title: string;
   timestamp: string;
   hash: string;
   status: 'verified' | 'pending';
+  link: string | null;
+  meta?: Record<string, any>;
 }
 
+type TabKey = 'competitions' | 'votes' | 'proofs' | 'transactions';
+
+
 export default function TransparencyExplorer() {
-  const [activeTab, setActiveTab] = useState<'competitions' | 'votes' | 'proofs' | 'transactions'>('competitions');
+  const [activeTab, setActiveTab] = useState<TabKey>('competitions');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const records: TransparencyRecord[] = [
-    {
-      id: '1',
-      type: 'competition',
-      title: 'Web3 Hackathon 2024',
-      timestamp: '2024-03-15 10:30:45 UTC',
-      hash: '0x4a2c9e7d3f1b5e8a6c9d2f4e7a1c3d5e6f7a8b9c',
-      status: 'verified',
-    },
-    {
-      id: '2',
-      type: 'vote',
-      title: 'Judge Vote Commitment - Hackathon',
-      timestamp: '2024-04-20 14:22:30 UTC',
-      hash: '0x1234567890abcdef1234567890abcdef12345678',
-      status: 'verified',
-    },
-    {
-      id: '3',
-      type: 'proof',
-      title: 'ZK Proof - Vote Validity #001',
-      timestamp: '2024-04-25 09:15:22 UTC',
-      hash: '0xabcdef1234567890abcdef1234567890abcdef12',
-      status: 'verified',
-    },
-    {
-      id: '4',
-      type: 'transaction',
-      title: 'Prize Distribution TX - $500K Released',
-      timestamp: '2024-05-01 16:45:10 UTC',
-      hash: '0x7890abcdef1234567890abcdef123456789abcde',
-      status: 'verified',
-    },
-    {
-      id: '5',
-      type: 'competition',
-      title: 'AI Innovation Challenge',
-      timestamp: '2024-03-20 11:20:15 UTC',
-      hash: '0xdef1234567890abcdef1234567890abcdef12345',
-      status: 'verified',
-    },
-    {
-      id: '6',
-      type: 'vote',
-      title: 'Judge Vote Commitment - AI Challenge',
-      timestamp: '2024-04-25 13:30:45 UTC',
-      hash: '0x567890abcdef1234567890abcdef123456789abc',
-      status: 'verified',
-    },
-  ];
+  const [allRecords, setAllRecords] = useState<{
+    competitions: TransparencyRecord[];
+    votes: TransparencyRecord[];
+    proofs: TransparencyRecord[];
+    transactions: TransparencyRecord[];
+  }>({ competitions: [], votes: [], proofs: [], transactions: [] });
 
-  const tabTypeMap: Record<typeof activeTab, TransparencyRecord['type']> = {
-    competitions: 'competition',
-    votes: 'vote',
-    proofs: 'proof',
-    transactions: 'transaction',
-  };
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch('/api/transparency')
+      .then((r) => {
+        if (!r.ok) throw new Error('Failed to fetch transparency data');
+        return r.json();
+      })
+      .then((data) => {
+        setAllRecords({
+          competitions: data.competitions || [],
+          votes: data.votes || [],
+          proofs: data.proofs || [],
+          transactions: data.transactions || [],
+        });
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const filteredRecords = records.filter((record) => {
-    const matchesTab = record.type === tabTypeMap[activeTab];
-    const matchesSearch = record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.hash.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
+  const currentRecords = allRecords[activeTab] || [];
+
+  const filteredRecords = currentRecords.filter((record) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      record.title.toLowerCase().includes(q) ||
+      record.hash.toLowerCase().includes(q) ||
+      (record.meta?.teamName || '').toLowerCase().includes(q) ||
+      (record.meta?.category || '').toLowerCase().includes(q)
+    );
   });
 
   const handleCopyHash = (hash: string) => {
@@ -90,6 +73,8 @@ export default function TransparencyExplorer() {
     setCopiedHash(hash);
     setTimeout(() => setCopiedHash(null), 2000);
   };
+
+  const tabs: TabKey[] = ['competitions', 'votes', 'proofs', 'transactions'];
 
   return (
     <ProtectedRoute>
@@ -119,16 +104,28 @@ export default function TransparencyExplorer() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by title or hash..."
+                  placeholder="Search by title, hash, or team..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  className="w-full pl-10 pr-4 py-2 bg-black/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               {/* Filter Button */}
-              <button className="flex items-center justify-center gap-2 px-4 py-2 bg-black/50 border border-cyan-500/30 rounded-lg text-gray-400 hover:text-cyan-300 hover:border-cyan-500/50 transition-all duration-300">
+              <button
+                onClick={() => setSearchQuery('')}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-black/50 border border-cyan-500/30 rounded-lg text-gray-400 hover:text-cyan-300 hover:border-cyan-500/50 transition-all duration-300"
+                title="Clear filter"
+              >
                 <Filter className="w-5 h-5" />
-                <span className="hidden sm:inline">Filter</span>
+                <span className="hidden sm:inline">Clear</span>
               </button>
             </div>
           </div>
@@ -138,18 +135,21 @@ export default function TransparencyExplorer() {
         <div className="border-b border-cyan-500/10 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex gap-8 overflow-x-auto">
-              {(['competitions', 'votes', 'proofs', 'transactions'] as const).map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`py-4 px-2 font-semibold transition-all duration-300 border-b-2 whitespace-nowrap ${activeTab === tab
-                    ? 'border-cyan-500 text-cyan-300'
-                    : 'border-transparent text-gray-400 hover:text-cyan-300'
-                    }`}
+                  className={`py-4 px-2 font-semibold transition-all duration-300 border-b-2 whitespace-nowrap ${
+                    activeTab === tab
+                      ? 'border-cyan-500 text-cyan-300'
+                      : 'border-transparent text-gray-400 hover:text-cyan-300'
+                  }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   {' '}
-                  <span className="text-xs text-gray-500">({records.filter(r => r.type === tabTypeMap[tab]).length})</span>
+                  <span className="text-xs text-gray-500">
+                    ({allRecords[tab]?.length ?? 0})
+                  </span>
                 </button>
               ))}
             </div>
@@ -159,7 +159,22 @@ export default function TransparencyExplorer() {
         {/* Content */}
         <section className="py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
-            {filteredRecords.length > 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-24 gap-3 text-gray-400">
+                <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+                <span>Loading transparency records…</span>
+              </div>
+            ) : error ? (
+              <div className="glass-card p-12 border-red-500/20 text-center">
+                <p className="text-red-400 mb-2">⚠ {error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 btn-ghost-neon text-sm"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : filteredRecords.length > 0 ? (
               <div className="space-y-4">
                 {filteredRecords.map((record, index) => (
                   <div
@@ -168,40 +183,57 @@ export default function TransparencyExplorer() {
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">
                             {record.title}
                           </h3>
-                          <div className="flex items-center gap-1 text-xs text-green-400">
+                          <div
+                            className={`flex items-center gap-1 text-xs ${
+                              record.status === 'verified' ? 'text-green-400' : 'text-amber-400'
+                            }`}
+                          >
                             <CheckCircle className="w-4 h-4" />
-                            Verified
+                            {record.status === 'verified' ? 'Verified' : 'Pending'}
                           </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-3">
-                          <div className="text-sm text-gray-400">
-                            {record.timestamp}
-                          </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+                          <div className="text-sm text-gray-400">{record.timestamp}</div>
                           <span className="badge-primary text-xs">
                             {record.type === 'competition'
                               ? 'Competition'
                               : record.type === 'vote'
-                                ? 'Vote Commitment'
-                                : record.type === 'proof'
-                                  ? 'ZK Proof'
-                                  : 'Transaction'}
+                              ? 'Vote Commitment'
+                              : record.type === 'proof'
+                              ? 'Submission Proof'
+                              : 'Transaction'}
                           </span>
+                          {record.meta?.category && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/20">
+                              {record.meta.category}
+                            </span>
+                          )}
+                          {record.meta?.teamName && (
+                            <span className="text-xs text-gray-400">
+                              Team: <span className="text-cyan-300">{record.meta.teamName}</span>
+                            </span>
+                          )}
+                          {record.meta?.score !== undefined && (
+                            <span className="text-xs text-gray-400">
+                              Score: <span className="text-lime-300 font-semibold">{record.meta.score}/10</span>
+                            </span>
+                          )}
                         </div>
 
                         {/* Hash Display */}
                         <div className="flex items-center gap-2">
-                          <code className="flex-1 px-3 py-2 bg-black/50 rounded border border-cyan-500/10 text-cyan-300 text-sm font-mono overflow-x-auto">
+                          <code className="flex-1 px-3 py-2 bg-black/50 rounded border border-cyan-500/10 text-cyan-300 text-sm font-mono overflow-x-auto min-w-0 truncate">
                             {record.hash}
                           </code>
                           <button
                             onClick={() => handleCopyHash(record.hash)}
-                            className="p-2 hover:bg-cyan-500/10 rounded transition-colors duration-300"
+                            className="p-2 hover:bg-cyan-500/10 rounded transition-colors duration-300 shrink-0"
                             title="Copy hash"
                           >
                             {copiedHash === record.hash ? (
@@ -214,17 +246,40 @@ export default function TransparencyExplorer() {
                       </div>
 
                       {/* View Button */}
-                      <button className="flex items-center gap-2 px-4 py-2 bg-black/50 border border-cyan-500/30 rounded-lg text-cyan-300 hover:border-cyan-500/50 transition-colors duration-300 whitespace-nowrap">
-                        <Eye className="w-4 h-4" />
-                        <span className="hidden sm:inline">View</span>
-                      </button>
+                      {record.link ? (
+                        <Link
+                          href={record.link}
+                          className="flex items-center gap-2 px-4 py-2 bg-black/50 border border-cyan-500/30 rounded-lg text-cyan-300 hover:border-cyan-500/50 hover:bg-cyan-500/10 transition-colors duration-300 whitespace-nowrap shrink-0"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span className="hidden sm:inline">View</span>
+                        </Link>
+                      ) : (
+                        <button
+                          disabled
+                          className="flex items-center gap-2 px-4 py-2 bg-black/30 border border-gray-700/50 rounded-lg text-gray-600 whitespace-nowrap shrink-0 cursor-not-allowed"
+                          title="No direct link available"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          <span className="hidden sm:inline">On-chain</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="glass-card p-12 border-cyan-500/20 text-center">
-                <p className="text-gray-400">No records found matching your search.</p>
+                {searchQuery ? (
+                  <>
+                    <p className="text-gray-400 mb-4">No records found matching &ldquo;{searchQuery}&rdquo;.</p>
+                    <button onClick={() => setSearchQuery('')} className="btn-ghost-neon">
+                      Clear Search
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-gray-400">No {activeTab} records found.</p>
+                )}
               </div>
             )}
           </div>
